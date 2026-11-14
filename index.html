@@ -56,10 +56,11 @@ audio{width:100%;height:40px}
 <main id="app"></main>
 <script>
 // ───────── 질문·원고 (여기만 고치면 됨) ─────────
+// v: 같은 답으로 이어지는 다른 질문 표현 (면접관은 외운 문장 그대로 묻지 않음)
 // s: [영어, 한글]. " / " = 끊어 읽는 자리(한 호흡). 한 문장은 짧게, 같은 문장틀을 여러 답에서 다시 씀.
 const DAYS=['11/14 (토)','11/15 (일)','11/16 (월)','11/17 (화)'];
 const Q=[
-{id:'intro',day:0,t:'자기소개',q:'Please introduce yourself.',qk:'자기소개를 해 주세요.',s:[
+{id:'intro',day:0,t:'자기소개',q:'Please introduce yourself.',qk:'자기소개를 해 주세요.',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
  ['Hello. / My name is Park Junseong.','안녕하세요. 박준성입니다.'],
  ['I work on AI policy / at Gimhae City.','김해시에서 AI 정책 일을 합니다.'],
  ['I studied economics / and urban renewal.','경제학과 도시재생을 공부했습니다.'],
@@ -73,13 +74,13 @@ const Q=[
  ['How can new technology / make people\'s lives better?','새 기술이 어떻게 사람들의 삶을 낫게 할 수 있을까?'],
  ['That is why / I want to study at KAIST.','그래서 KAIST에서 공부하고 싶습니다.'],
  ['Thank you.','감사합니다.']]},
-{id:'why',day:0,t:'지원 동기',q:'Why did you apply to the Graduate School of Future Strategy?',qk:'왜 미래전략대학원에 지원했습니까?',s:[
+{id:'why',day:0,t:'지원 동기',q:'Why did you apply to the Graduate School of Future Strategy?',qk:'왜 미래전략대학원에 지원했습니까?',v:["Why KAIST?", "Why did you choose this program?", "What brought you to this school?"],s:[
  ['I learned one thing / from my work.','일하면서 한 가지를 배웠습니다.'],
  ['Technology, industry, and cities / are all connected.','기술, 산업, 도시는 모두 연결되어 있습니다.'],
  ['But policies are divided.','하지만 정책은 나뉘어 있습니다.'],
  ['So I want to study them together.','그래서 이것들을 함께 공부하고 싶습니다.'],
  ['This school is the best place / for that.','이 대학원이 그러기에 가장 좋은 곳입니다.']]},
-{id:'master',day:0,t:'박사인데 왜 석사?',q:'You already have a PhD. Why do you want another master\'s degree?',qk:'이미 박사학위가 있는데 왜 석사과정에 지원했습니까?',s:[
+{id:'master',day:0,t:'박사인데 왜 석사?',q:'You already have a PhD. Why do you want another master\'s degree?',qk:'이미 박사학위가 있는데 왜 석사과정에 지원했습니까?',v:["You have a doctoral degree. Why a master's program?", "Why do you need this degree?", "Isn't a PhD enough?"],s:[
  ['That is a fair question.','당연한 질문입니다.'],
  ['My PhD was about / cities and the economy.','제 박사 연구는 도시와 경제에 관한 것이었습니다.'],
  ['But now / I work on AI and new industries.','하지만 지금은 AI와 신산업 일을 합니다.'],
@@ -96,7 +97,7 @@ const Q=[
  ['Sorry. / Let me say that again.','죄송합니다. 다시 말하겠습니다.'],
  ['I don\'t know much about that, / but I want to learn.','그건 잘 모르지만 배우고 싶습니다.'],
  ['Thank you / for your time.','시간 내 주셔서 감사합니다.']]},
-{id:'research',day:1,t:'박사 연구',q:'Please tell us about your previous research.',qk:'이전 연구를 소개해 주세요.',s:[
+{id:'research',day:1,t:'박사 연구',q:'Please tell us about your previous research.',qk:'이전 연구를 소개해 주세요.',v:["What was your PhD research about?", "Tell us about your doctoral thesis.", "What did you study before?"],s:[
  ['I studied suicide risk / in local areas.','지역별 자살 위험을 연구했습니다.'],
  ['I focused on / economic factors.','경제적 요인에 집중했습니다.'],
  ['I found one thing.','한 가지를 발견했습니다.'],
@@ -104,7 +105,7 @@ const Q=[
  ['So the problem is / not just personal.','그래서 이 문제는 개인만의 문제가 아닙니다.'],
  ['It comes from / the local economy.','지역 경제에서 비롯됩니다.'],
  ['I proposed a policy / to the National Assembly Research Service.','국회입법조사처에 정책을 제안했습니다.']]},
-{id:'study',day:1,t:'학업 계획',q:'What do you want to study at KAIST?',qk:'KAIST에서 무엇을 공부하고 싶습니까?',s:[
+{id:'study',day:1,t:'학업 계획',q:'What do you want to study at KAIST?',qk:'KAIST에서 무엇을 공부하고 싶습니까?',v:["What is your research plan?", "What topic are you interested in?", "What will you research here?"],s:[
  ['I have one research question.','연구 질문이 하나 있습니다.'],
  ['How does new technology / change old factory cities?','새 기술은 오래된 공업도시를 어떻게 바꾸는가?'],
  ['These cities have / old factories and older workers.','이 도시들은 공장이 낡고 인력이 고령화되었습니다.'],
@@ -112,33 +113,33 @@ const Q=[
  ['I want to connect them / with new technology.','그것을 새 기술과 연결하고 싶습니다.'],
  ['My target is / the southeast region of Korea.','대상은 동남권입니다.'],
  ['I want to find / the best future strategy.','가장 좋은 미래전략을 찾고 싶습니다.']]},
-{id:'after',day:1,t:'졸업 후 계획',q:'What is your plan after graduation?',qk:'졸업 후 계획은 무엇입니까?',s:[
+{id:'after',day:1,t:'졸업 후 계획',q:'What is your plan after graduation?',qk:'졸업 후 계획은 무엇입니까?',v:["What will you do after you graduate?", "What are your future plans?", "What is your long-term goal?"],s:[
  ['I will keep working / for my region.','계속 지역을 위해 일하겠습니다.'],
  ['I will use my research / in real policy.','연구를 실제 정책에 쓰겠습니다.'],
  ['Many regions / just accept the future.','많은 지역이 미래를 그냥 받아들입니다.'],
  ['I want to change that.','저는 그것을 바꾸고 싶습니다.'],
  ['I want to help my region / choose its own future.','지역이 스스로 미래를 선택하도록 돕고 싶습니다.']]},
-{id:'achieve',day:1,t:'업무 성과',q:'What is your biggest achievement at work?',qk:'직장에서 가장 큰 성과는 무엇입니까?',s:[
+{id:'achieve',day:1,t:'업무 성과',q:'What is your biggest achievement at work?',qk:'직장에서 가장 큰 성과는 무엇입니까?',v:["What are you most proud of in your career?", "Tell us about your work experience.", "What have you done at your job?"],s:[
  ['My best work is / the Gimhae AI Innovation Platform.','가장 큰 성과는 김해 AI 혁신 플랫폼입니다.'],
  ['First, / I started an AI study group / at work.','먼저 직장에서 AI 연구모임을 시작했습니다.'],
  ['Then / we made an AI team.','그다음 AI 팀을 만들었습니다.'],
  ['We built the platform / by ourselves.','플랫폼을 우리 손으로 만들었습니다.'],
  ['No outside company. / No extra budget.','외부 용역도, 추가 예산도 없었습니다.'],
  ['We won a minister\'s award / for it.','이 일로 장관상을 받았습니다.']]},
-{id:'closing',day:1,t:'마지막 한마디',q:'Do you have any last words?',qk:'마지막으로 하고 싶은 말이 있습니까?',s:[
+{id:'closing',day:1,t:'마지막 한마디',q:'Do you have any last words?',qk:'마지막으로 하고 싶은 말이 있습니까?',v:["Is there anything you want to add?", "Any final comments?", "Anything else you would like to say?"],s:[
  ['Thank you / for this chance.','이런 기회를 주셔서 감사합니다.'],
  ['I learned a lot / in the field.','현장에서 많이 배웠습니다.'],
  ['Now / I want to study more deeply.','이제 더 깊이 공부하고 싶습니다.'],
  ['I will bring it back / to my region.','배운 것을 지역으로 가져가겠습니다.'],
  ['Thank you / for listening.','들어 주셔서 감사합니다.']]},
-{id:'ax',day:2,t:'AX란?',q:'What is AX? Can you explain it simply?',qk:'AX가 무엇인지 쉽게 설명해 주세요.',s:[
+{id:'ax',day:2,t:'AX란?',q:'What is AX? Can you explain it simply?',qk:'AX가 무엇인지 쉽게 설명해 주세요.',v:["What does AX mean?", "You mentioned AX. What is it?", "How is AI changing industry?"],s:[
  ['AX means / AI transformation.','AX는 AI 전환을 뜻합니다.'],
  ['It means using AI / to change how we work.','AI로 일하는 방식을 바꾸는 것입니다.'],
  ['It is not just / buying software.','단순히 소프트웨어를 사는 것이 아닙니다.'],
  ['It changes / products, jobs, and factories.','제품과 일자리, 공장을 바꿉니다.'],
  ['It also changes the city.','도시도 바꿉니다.'],
  ['So AX is a question / for the whole region.','그래서 AX는 지역 전체의 문제입니다.']]},
-{id:'power',day:2,t:'전력반도체',q:'Why are power semiconductors important?',qk:'전력반도체는 왜 중요합니까?',s:[
+{id:'power',day:2,t:'전력반도체',q:'Why are power semiconductors important?',qk:'전력반도체는 왜 중요합니까?',v:["What are power semiconductors?", "Why do you care about power semiconductors?", "Tell us about your power semiconductor project."],s:[
  ['Power semiconductors / control electricity.','전력반도체는 전기를 제어합니다.'],
  ['AI needs / a lot of electricity.','AI는 전기를 많이 씁니다.'],
  ['So AI data centers need / better power chips.','그래서 AI 데이터센터에는 더 좋은 전력 칩이 필요합니다.'],
@@ -146,7 +147,7 @@ const Q=[
  ['My region is strong / in cars and ships.','우리 지역은 자동차와 조선이 강합니다.'],
  ['So this is a big chance / for us.','그래서 우리에게 큰 기회입니다.'],
  ['I am connecting three universities / for this.','이를 위해 세 대학을 연결하고 있습니다.']]},
-{id:'leader',day:2,t:'리더십 사례',q:'Tell us about a time you showed leadership.',qk:'리더십을 발휘한 사례를 말해 주세요.',s:[
+{id:'leader',day:2,t:'리더십 사례',q:'Tell us about a time you showed leadership.',qk:'리더십을 발휘한 사례를 말해 주세요.',v:["Describe your leadership experience.", "Have you ever led a project?", "Tell us about a difficult project."],s:[
  ['I started / the AI WAVE Committee.','AI WAVE 위원회를 출범시켰습니다.'],
  ['City hall cannot do AX alone.','시청 혼자서는 AX를 할 수 없습니다.'],
  ['So I visited / universities and companies.','그래서 대학과 기업을 찾아갔습니다.'],
@@ -155,20 +156,20 @@ const Q=[
  ['So I looked for / small common points.','그래서 작은 공통점을 찾았습니다.'],
  ['Step by step, / we built trust.','한 걸음씩 신뢰를 쌓았습니다.'],
  ['I learned / that trust comes first.','신뢰가 먼저라는 것을 배웠습니다.']]},
-{id:'balance',day:2,t:'일과 학업 병행',q:'You have a full-time job. How will you manage work and study?',qk:'일과 학업을 어떻게 병행하겠습니까?',s:[
+{id:'balance',day:2,t:'일과 학업 병행',q:'You have a full-time job. How will you manage work and study?',qk:'일과 학업을 어떻게 병행하겠습니까?',v:["How will you study while working?", "Do you have enough time for this program?", "Can you handle both your job and school?"],s:[
  ['It will be hard, / but I am ready.','힘들겠지만 준비되어 있습니다.'],
  ['My work and my study / are connected.','제 일과 공부는 연결되어 있습니다.'],
  ['I can use what I learn / at work.','배운 것을 업무에 쓸 수 있습니다.'],
  ['My work problems / become my research questions.','업무의 문제가 연구 질문이 됩니다.'],
  ['I will use / evenings and weekends.','저녁과 주말을 쓰겠습니다.'],
  ['I can do both.','둘 다 해낼 수 있습니다.']]},
-{id:'strength',day:2,t:'강점과 약점',q:'What are your strengths and weaknesses?',qk:'강점과 약점은 무엇입니까?',s:[
+{id:'strength',day:2,t:'강점과 약점',q:'What are your strengths and weaknesses?',qk:'강점과 약점은 무엇입니까?',v:["What is your greatest strength?", "What is your weak point?", "How would you describe yourself?"],s:[
  ['My strength is / connecting people.','제 강점은 사람을 연결하는 것입니다.'],
  ['I find new tasks early.','필요한 과제를 먼저 찾습니다.'],
  ['Then / I bring people together / and act.','그리고 사람을 모아 실행합니다.'],
  ['My weakness is / speaking English.','제 약점은 영어 말하기입니다.'],
  ['But I practice / every day.','하지만 매일 연습합니다.']]},
-{id:'region',day:2,t:'지역의 과제',q:'What is the biggest challenge for your region?',qk:'당신 지역의 가장 큰 과제는 무엇입니까?',s:[
+{id:'region',day:2,t:'지역의 과제',q:'What is the biggest challenge for your region?',qk:'당신 지역의 가장 큰 과제는 무엇입니까?',v:["What problems does your city face?", "What is the main issue in your region?", "What worries you about your region?"],s:[
  ['The biggest problem is / old industrial cities.','가장 큰 문제는 오래된 산업도시입니다.'],
  ['Factories are getting old.','공장이 낡아 가고 있습니다.'],
  ['Young people are leaving.','청년이 떠나고 있습니다.'],
@@ -191,12 +192,12 @@ const today=Math.min(3,Math.max(0,Math.floor((Date.now()-new Date('2026-11-14T00
 
 // ───────── 읽어주기 ─────────
 let sayId=0,wd,lt,tm,wl,mr,chunks,stream;
-function say(text,onend){
+function say(text,onend,vary){ // vary: 목소리·속도를 무작위로 (실전은 늘 다른 사람이 물음)
   speechSynthesis.cancel();clearTimeout(wd);const id=++sayId;
   const fin=()=>{if(id!==sayId)return;sayId++;clearTimeout(wd);onend&&onend()};
   const vs=speechSynthesis.getVoices().filter(v=>v.lang.replace('_','-').startsWith('en'));
-  const us=vs.filter(v=>/en.US/.test(v.lang)),voice=us.find(v=>/Google|Natural|Samantha|Aria|Jenny/.test(v.name))||us[0]||vs[0];
-  const u=new SpeechSynthesisUtterance(text);u.lang='en-US';if(voice)u.voice=voice;u.rate=rate();u.onend=u.onerror=fin;
+  const us=vs.filter(v=>/en.US/.test(v.lang)),voice=vary&&vs.length?vs[Math.floor(Math.random()*vs.length)]:us.find(v=>/Google|Natural|Samantha|Aria|Jenny/.test(v.name))||us[0]||vs[0];
+  const u=new SpeechSynthesisUtterance(text);u.lang='en-US';if(voice)u.voice=voice;u.rate=rate()*(vary?.9+Math.random()*.3:1);u.onend=u.onerror=fin;
   speechSynthesis.speak(u);
   wd=setTimeout(fin,(words(text)*700+4000)/rate()); // 일부 휴대폰은 끝났다는 신호를 안 줌 → 시간으로 넘김
 }
@@ -230,7 +231,7 @@ function show(){
     stage.className='me';stage.onclick=next;
     stage.insertAdjacentHTML('beforeend',`<div class="you">🗣 지금 말하세요<small>다 말했으면 화면 탭</small></div><div class="gbar"><i style="animation-duration:${ms}ms"></i></div>`);
     later(next,ms)};
-  if(s.say){stage.insertAdjacentHTML('afterbegin','<div class="who">👂 듣기</div>');say(s.say,()=>{const w=stage.querySelector('.who');w&&w.remove();gap()})}else gap();
+  if(s.say){stage.insertAdjacentHTML('afterbegin','<div class="who">👂 듣기</div>');say(s.say,()=>{const w=stage.querySelector('.who');w&&w.remove();gap()},s.vary)}else gap();
 }
 function mv(d){P.i=Math.min(P.steps.length-1,Math.max(0,P.i+d));P.paused=false;$('#pp').textContent='⏸';show()}
 function pause(){P.paused=!P.paused;$('#pp').textContent=P.paused?'▶':'⏸';P.paused?halt():show()}
@@ -247,18 +248,21 @@ function echo(q){const out=[];q.s.forEach(([en,ko],k)=>{
 function trans(q){return q.s.flatMap(([en,ko],k)=>{const full=clean(en),tag=`${q.t} · ② 한글 보고 영어로 ${k+1}/${q.s.length}`;
   return[{tag,gap:(words(full)*550+1800)/rate(),html:H(`<span class="hint">${hint(full)}</span>`,ko)},{tag,say:full,rest:700,html:H(`<b>${full}</b>`,ko)}]})}
 // 3) 질문 듣고 통째로: 문장 첫머리만 보고 답변 전체 → 모범답안과 비교, 스스로 판정
-function whole(q){const tag=`${q.t} · ③ 질문 듣고 통째로`;return[
-  {tag,say:q.q,rest:200,html:`<div class="big">🔊</div><div class="ko" style="text-align:center">질문을 들으세요</div>`},
+const PACE=[90,100,110,120]; // 수준별 목표 속도(분당 단어). 😀 누를수록 목표 시간이 줄어듦
+function whole(q,vary){const tag=`${q.t} · ③ 질문 듣고 통째로`,ask=vary&&q.v?q.v[Math.floor(Math.random()*q.v.length)]:q.q;return[
+  {tag,say:ask,vary,rest:200,html:`<div class="big">🔊</div><div class="ko" style="text-align:center">질문을 들으세요</div>`},
   {tag,html:'',wait:(next,stage)=>{
-    const goal=Math.round(words(clean(q.s.map(x=>x[0]).join(' ')))/110*60),t0=Date.now();
+    const goal=Math.round(words(clean(q.s.map(x=>x[0]).join(' ')))/PACE[lv(q)]*60),t0=Date.now();
     stage.className='me';
     stage.innerHTML=`<div class="ko">Q. ${q.qk}</div><div class="cue">${q.s.map(x=>clean(x[0]).split(' ').slice(0,2).join(' ')+' …').join('<br>')}</div>
-      <div class="you">🗣 답변하세요 <span class="timer" id="tm">0</span>초 <small>목표 ${goal}초</small></div><button class="ok" id="fin">다 말했다</button>`;
+      <div class="you">🗣 답변하세요 <span class="timer" id="tm">0</span>초 <small>목표 ${goal}초</small></div><div class="gbar"><i style="animation-duration:${goal}s"></i></div>
+      <div class="two"><button id="again">🔊 질문 다시</button><button class="ok" id="fin">다 말했다</button></div>`;
+    $('#again').onclick=()=>say(ask,null,vary);
     tm=setInterval(()=>{const e=$('#tm');e&&(e.textContent=Math.floor((Date.now()-t0)/1000))},250);
     if(S._rec)navigator.mediaDevices.getUserMedia({audio:true}).then(st=>{stream=st;chunks=[];mr=new MediaRecorder(st);mr.ondataavailable=e=>chunks.push(e.data);mr.start()}).catch(()=>{});
     $('#fin').onclick=()=>{
       const sec=Math.round((Date.now()-t0)/1000);clearInterval(tm);stage.className='';
-      stage.innerHTML=`<div class="ko">내 답변 ${sec}초 · 목표 ${goal}초</div><div id="au"></div><div class="ans">${q.s.map(x=>`<p>${clean(x[0])}<small>${x[1]}</small></p>`).join('')}</div>
+      stage.innerHTML=`<div class="ko">Q. ${ask}</div><div class="${sec<=goal?'you':'ko'}">${sec<=goal?'✔':'⏱'} 내 답변 ${sec}초 · 목표 ${goal}초${sec<=goal?'':' (넘김)'}</div><div id="au"></div><div class="ans">${q.s.map(x=>`<p>${clean(x[0])}<small>${x[1]}</small></p>`).join('')}</div>
         <button id="mdl">▶ 모범답안 듣기</button><div class="two"><button id="no">😵 아직</button><button class="ok" id="yes">😀 됐다</button></div>`;
       if(mr&&mr.state!=='inactive'){mr.onstop=()=>{const a=$('#au');a&&(a.innerHTML=`<audio controls src="${URL.createObjectURL(new Blob(chunks,{type:mr.mimeType}))}"></audio>`);stream.getTracks().forEach(t=>t.stop())};mr.stop()}
       $('#mdl').onclick=()=>say(clean(q.s.map(x=>x[0]).join(' ')));
@@ -267,9 +271,10 @@ function whole(q){const tag=`${q.t} · ③ 질문 듣고 통째로`;return[
 // 수준에 맞춰 단계를 줄임: 처음엔 ①②③, 익숙해지면 ②③, 외웠으면 ③만
 const ladder=(q,all)=>q.only
   ?[...(all||lv(q)<2?echo(q):[]),...trans(q),{tag:q.t,html:'',wait:n=>{bump(q,1);n()}}]
-  :[...(all||lv(q)<1?echo(q):[]),...(all||lv(q)<2?trans(q):[]),...whole(q)];
+  :[...(all||lv(q)<1?echo(q):[]),...(all||lv(q)<2?trans(q):[]),...whole(q,lv(q)>=1)]; // 처음엔 기본 질문, 한 번 통과하면 변형 질문
 const listenAll=()=>Q.flatMap(q=>[{tag:q.t+' · 듣기만',say:q.q,rest:500,html:H(`<b>${q.q}</b>`,q.qk)},...q.s.map(([en,ko])=>({tag:q.t+' · 듣기만',say:clean(en),rest:400,html:H(clean(en),ko)}))]);
 
+console.assert(Q.every(q=>q.only||q.v.length>=3),'질문 변형 3개씩');
 console.assert(hint('I am.')==='I a·.','hint');
 console.assert(echo({t:'',s:[['a / b','x'],['c','y']]}).length===4,'echo: 덩이 2 + 문장 1 + 문장 1');
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
@@ -290,7 +295,7 @@ function home(){
     <label><input id="rec" type="checkbox" ${S._rec?'checked':''}> 통째로 말할 때 내 목소리 녹음해서 들려주기 (마이크 허용 필요)</label>
     <span>● 세 개가 차면 완성. 질문을 누르면 그 질문만 처음부터 연습.</span></div>`;
   $('#b1').onclick=()=>run(sess.flatMap(q=>ladder(q)));
-  $('#b2').onclick=()=>{const rest=Q.filter(q=>!q.only&&q.id!=='intro').map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([Q[0],...rest].flatMap(whole))};
+  $('#b2').onclick=()=>{const rest=Q.filter(q=>!q.only&&q.id!=='intro').map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([Q[0],...rest].flatMap(q=>whole(q,true)))};
   $('#b3').onclick=()=>run(listenAll());
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
