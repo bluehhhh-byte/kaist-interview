@@ -187,7 +187,7 @@ const bump=(q,d)=>{S[q.id]=Math.min(3,Math.max(0,lv(q)+d));S[q.id+'_t']=Date.now
 // 간격 복습(Cepeda 외 2006): 통과할수록 다음 복습까지 간격을 늘림 — 20분 → 4시간 → 20시간
 const due=q=>lv(q)?(S[q.id+'_t']||0)+[0,12e5,144e5,72e6][lv(q)]:0;
 const rate=()=>+S._rate||0.75;
-const pad=()=>+S._pad||1.6; // 말할 시간 배수. 다 말했으면 화면을 탭해 넘기면 되므로 넉넉하게
+const pad=()=>+S._pad||2.2; // 말할 시간 배수. 다 말했으면 화면을 탭해 넘기면 되므로 넉넉하게
 const clean=en=>en.replace(/ \/ /g,' ');
 const words=t=>t.split(/\s+/).length;
 const hint=t=>t.split(' ').map(w=>w[0]+w.slice(1).replace(/[A-Za-z]/g,'·')).join(' '); // 첫 글자만 남김
