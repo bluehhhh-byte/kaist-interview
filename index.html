@@ -6,8 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>KAIST 영어 면접 훈련</title>
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--fg:#1c2330;--mut:#6b7585;--line:#dfe3ea;--acc:#1f5fd0;--me:#e3f6ea;--meFg:#12854a}
-@media(prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--fg:#e6e9ef;--mut:#98a2b3;--line:#2c3340;--acc:#6ea0ff;--me:#12301f;--meFg:#4cc38a}}
+:root{color-scheme:dark;--bg:#12151b;--card:#1b2029;--fg:#e6e9ef;--mut:#98a2b3;--line:#2c3340;--acc:#6ea0ff;--me:#12301f;--meFg:#4cc38a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 "Segoe UI","Malgun Gothic",system-ui,sans-serif}
@@ -39,7 +38,7 @@ h3{margin:20px 0 4px;font-size:14px;color:var(--mut)}
 .big{font-size:54px;text-align:center}
 .you{color:var(--meFg);font-weight:600;font-size:18px}.you small{font-weight:400;opacity:.8;margin-left:6px}
 .who{color:var(--mut);font-size:15px}
-.gbar{height:8px;border-radius:9px;background:#0001;overflow:hidden}
+.gbar{height:8px;border-radius:9px;background:#fff2;overflow:hidden}
 .gbar i{display:block;height:100%;background:var(--meFg);animation:g linear forwards}
 @keyframes g{from{width:100%}to{width:0}}
 .cue{font-size:20px;line-height:1.9;color:var(--mut)}
@@ -187,7 +186,8 @@ const lv=q=>S[q.id]||0;                 // 0~3. 0=처음, 3=완전히 외움
 const bump=(q,d)=>{S[q.id]=Math.min(3,Math.max(0,lv(q)+d));S[q.id+'_t']=Date.now();save()};
 // 간격 복습(Cepeda 외 2006): 통과할수록 다음 복습까지 간격을 늘림 — 20분 → 4시간 → 20시간
 const due=q=>lv(q)?(S[q.id+'_t']||0)+[0,12e5,144e5,72e6][lv(q)]:0;
-const rate=()=>+S._rate||0.85;
+const rate=()=>+S._rate||0.75;
+const pad=()=>+S._pad||1.6; // 말할 시간 배수. 다 말했으면 화면을 탭해 넘기면 되므로 넉넉하게
 const clean=en=>en.replace(/ \/ /g,' ');
 const words=t=>t.split(/\s+/).length;
 const hint=t=>t.split(' ').map(w=>w[0]+w.slice(1).replace(/[A-Za-z]/g,'·')).join(' '); // 첫 글자만 남김
@@ -231,7 +231,7 @@ function paint(s,stage){$('#cnt').textContent=s.tag;stage.className='';stage.onc
 function play(s,stage,next){ // 한 단계: 보여 주고 → 읽어 주고 → 말할 틈을 준 뒤 next
   paint(s,stage);const t=Date.now();
   const gap=()=>{
-    const ms=s.gap===true?(Date.now()-t)*1.5+1000:s.gap;
+    const ms=(s.gap===true?(Date.now()-t)*1.5+1000:s.gap)*pad();
     if(!ms)return later(next,s.rest||350);
     stage.className='me';stage.onclick=next;
     stage.insertAdjacentHTML('beforeend',`<div class="you">🗣 지금 말하세요<small>다 말했으면 화면 탭</small></div><div class="gbar"><i style="animation-duration:${ms}ms"></i></div>`);
@@ -265,7 +265,7 @@ function drill(q){
     const intro=x=>seq(echo1(q,x.k,tag()),()=>{x.seen=true;x.due=Date.now()+GAPS[0];loop()});
     const pass=x=>{x.n++;x.due=Date.now()+(GAPS[x.n]||0)};
     const test=x=>{const full=clean(x.en);
-      play({tag:tag(),gap:(words(full)*550+1800)/rate(),html:H(cue(x.en,x.n),x.ko)},stage,()=>{
+      play({tag:tag(),gap:(words(full)*550+1800)/rate(),html:'<div class="who">🔁 앞에서 배운 문장 — 안 보고 말하기</div>'+H(cue(x.en,x.n),x.ko)},stage,()=>{
         let bad=false;
         play({tag:tag(),say:full,rest:1500,html:H(`<b>${full}</b>`,x.ko)+'<button id="bad">😵 틀렸음</button>'},stage,()=>{
           if(bad){x.n=Math.max(0,x.n-1);x.due=Date.now()+GAPS[0]}else pass(x);loop()});
@@ -289,7 +289,7 @@ function whole(q,vary){const tag=`${q.t} · ③ 질문 듣고 통째로`,ask=var
   {tag,html:'',wait:(next,stage)=>{
     const goal=Math.round(words(clean(q.s.map(x=>x[0]).join(' ')))/PACE[lv(q)]*60),t0=Date.now();
     stage.className='me';
-    stage.innerHTML=`<div class="ko">Q. ${q.qk}</div><div class="cue">${q.s.map(x=>clean(x[0]).split(' ').slice(0,2).join(' ')+' …').join('<br>')}</div>
+    stage.innerHTML=`<div class="ko">Q. ${ask===q.q?q.qk:ask}</div><div class="cue">${q.s.map(x=>clean(x[0]).split(' ').slice(0,2).join(' ')+' …').join('<br>')}</div>
       <div class="you">🗣 답변하세요 <span class="timer" id="tm">0</span>초 <small>목표 ${goal}초</small></div><div class="gbar"><i style="animation-duration:${goal}s"></i></div>
       <div class="two"><button id="again">🔊 질문 다시</button><button class="ok" id="fin">다 말했다</button></div>`;
     $('#again').onclick=()=>say(ask,null,vary);
@@ -329,6 +329,7 @@ function home(){
     ${DAYS.map((dn,i)=>{const qs=Q.filter(q=>q.day===i);return qs.length?`<h3>${i+1}일차 · ${dn}</h3>`+qs.map(q=>
       `<button class="item" data-id="${q.id}"><span class="t">${q.t}<small>${q.q}</small></span><span class="dots">${lv(q)&&lv(q)<3&&due(q)<=Date.now()?'⏰ ':''}${'●'.repeat(lv(q))}${'○'.repeat(3-lv(q))}</span></button>`).join(''):`<h3>4일차 · ${dn} — 새 질문 없음. 모의면접 반복</h3>`}).join('')}
     <div class="set"><label>읽는 속도 <input id="rate" type="range" min="0.6" max="1.1" step="0.05" value="${rate()}"><span id="rv">${rate()}배</span></label>
+    <label>말할 시간 <input id="pad" type="range" min="1" max="3" step="0.2" value="${pad()}"><span id="pv">${pad()}배</span></label>
     <label><input id="rec" type="checkbox" ${S._rec?'checked':''}> 통째로 말할 때 내 목소리 녹음해서 들려주기 (마이크 허용 필요)</label>
     <span>● 세 개가 차면 완성. ⏰ = 복습할 때가 됨. 질문을 누르면 그 질문만 처음부터 연습.</span>
     <details><summary>이 훈련법의 근거 (연구 논문)</summary><ul style="padding-left:18px;margin:6px 0">
@@ -346,6 +347,7 @@ function home(){
   $('#b3').onclick=()=>run(listenAll());
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
+  $('#pad').oninput=e=>{S._pad=e.target.value;save();$('#pv').textContent=e.target.value+'배'};
   $('#rec').onchange=e=>{S._rec=e.target.checked;save()};
 }
 home();
