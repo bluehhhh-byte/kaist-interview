@@ -48,6 +48,7 @@ h3{margin:20px 0 4px;font-size:14px;color:var(--mut)}
 .two{display:flex;gap:8px}.two button{flex:1;font-size:18px;padding:16px 8px}
 .ok{background:var(--meFg);border-color:var(--meFg);color:#fff}
 #bad{align-self:flex-start}
+.mic{height:6px;border-radius:9px;background:#fff1;overflow:hidden}.mic i{display:block;height:100%;width:0;background:var(--acc);transition:width .08s}
 .timer{font-variant-numeric:tabular-nums;font-size:22px;font-weight:600}
 audio{width:100%;height:40px}
 </style>
@@ -208,7 +209,27 @@ function say(text,onend,vary){ // vary: 목소리·속도를 무작위로 (실�
 }
 speechSynthesis.getVoices();
 const later=(f,ms)=>{clearTimeout(lt);lt=setTimeout(f,ms)};
-function halt(){clearTimeout(lt);clearTimeout(wd);clearInterval(tm);sayId++;speechSynthesis.cancel();if(mr&&mr.state!=='inactive'){mr.onstop=null;mr.stop()}stream&&stream.getTracks().forEach(t=>t.stop())}
+// ───────── 말 끝 감지: 소리 크기만 봄. 음성은 기기 밖으로 나가지 않음 ─────────
+// ponytail: 아이폰은 마이크가 켜져 있는 동안 읽어 주는 소리가 작아질 수 있음. 심하면 단계마다 마이크를 껐다 켜기
+let AC,vad=null,vadErr='',heard=null,lr;
+const vadOn=()=>S._vad!==false;
+function micOn(){if(!vadOn()||vad||!navigator.mediaDevices)return;
+  AC=AC||new AudioContext();AC.resume(); // 버튼을 누른 순간에 만들어야 아이폰에서 동작
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}).then(st=>{
+    if(!P)return st.getTracks().forEach(t=>t.stop());
+    const an=AC.createAnalyser();an.fftSize=1024;AC.createMediaStreamSource(st).connect(an);vad={st,an,buf:new Float32Array(1024)};vadErr=''
+  }).catch(e=>vadErr=micErr(e))}
+function micOff(){vad&&vad.st.getTracks().forEach(t=>t.stop());vad=null}
+// 주변 소음(floor)은 조용할 땐 바로 내려가고 시끄러우면 천천히 올라감 → 바로 말을 시작해도 목소리를 소음으로 착각하지 않음
+// 소음의 3배 넘는 소리가 0.3초 넘게 난 뒤 1.2초 조용하면 "다 말함"
+function vadTick(st,v,now){st.floor=v<st.floor?v:st.floor*.998+v*.002;
+  if(v>Math.max(.015,st.floor*3)){st.spoke=st.spoke||now;st.quiet=now}
+  return st.spoke&&st.quiet-st.spoke>300&&now-st.quiet>1200?1:0}
+function hear(go){if(!vad)return;const st={floor:.01,spoke:0,quiet:0};
+  const f=()=>{vad.an.getFloatTimeDomainData(vad.buf);let s=0;for(const x of vad.buf)s+=x*x;const v=Math.sqrt(s/vad.buf.length),b=$('#lv');
+    b&&(b.style.width=Math.min(100,v*400)+'%');if(vadTick(st,v,Date.now()))return go();if(st.spoke)heard=true;lr=requestAnimationFrame(f)};f()}
+let ptok=0;
+function halt(){ptok++;const sg=$('#stage');sg&&(sg.onclick=null);cancelAnimationFrame(lr);clearTimeout(lt);clearTimeout(wd);clearInterval(tm);sayId++;speechSynthesis.cancel();if(mr&&mr.state!=='inactive'){mr.onstop=null;mr.stop()}stream&&stream.getTracks().forEach(t=>t.stop())}
 const micErr=e=>({NotAllowedError:'브라우저가 마이크를 막았습니다. 주소창 왼쪽 자물쇠 → 마이크 → 허용',NotFoundError:'마이크를 찾지 못했습니다',NotReadableError:'다른 프로그램(줌·팀즈 등)이 마이크를 쓰고 있습니다'}[e.name]||e.name+': '+e.message);
 // 마이크 확인: 10초 동안 소리 크기 막대와 쓰는 마이크 이름을 보여 줌
 function micTest(out){
@@ -227,14 +248,14 @@ document.addEventListener('visibilitychange',()=>{if(P&&!document.hidden)awake()
 // 단계 = {tag, html, say?, gap?(true=읽은 시간만큼 / 숫자 ms), rest?, wait?(next)}
 let P=null;
 function run(steps,onDone){
-  P={steps,i:0,onDone,paused:false};awake();
+  P={steps,i:0,onDone,paused:false};awake();micOn();
   app.innerHTML=`<div class="top"><button onclick="quit()">✕</button><div class="pg"><i id="pgb"></i></div></div><div id="cnt"></div>
     <div id="stage"></div><div class="ctl"><button onclick="mv(-1)">⏮</button><button id="pp" onclick="pause()">⏸</button><button onclick="mv(1)">⏭</button></div>`;
   show();
 }
 function show(){
   halt();P.sub=null;const s=P.steps[P.i];
-  if(!s){const d=P.onDone;P=null;wl&&wl.release();return d?d():home()}
+  if(!s){const d=P.onDone;P=null;micOff();wl&&wl.release();return d?d():home()}
   $('#pgb').style.width=P.i/P.steps.length*100+'%';
   const stage=$('#stage'),next=()=>{P.i++;show()};
   if(P.paused)return paint(s,stage);
@@ -242,18 +263,19 @@ function show(){
 }
 function paint(s,stage){$('#cnt').textContent=s.tag;stage.className='';stage.onclick=null;stage.innerHTML=s.html}
 function play(s,stage,next){ // 한 단계: 보여 주고 → 읽어 주고 → 말할 틈을 준 뒤 next
-  paint(s,stage);const t=Date.now();
-  const gap=()=>{
+  paint(s,stage);const t=Date.now(),k=++ptok; // k: 이 단계의 번호. 화면 탭·시간 끝·말 끝이 겹쳐도, 일시정지 뒤에도 옛 단계는 다음으로 못 넘김
+  const gap=()=>{if(k!==ptok)return;
     const ms=(s.gap===true?(Date.now()-t)*1.5+1000:s.gap)*pad();
     if(!ms)return later(next,s.rest||350);
-    stage.className='me';stage.onclick=next;
-    stage.insertAdjacentHTML('beforeend',`<div class="you">🗣 지금 말하세요<small>다 말했으면 화면 탭</small></div><div class="gbar"><i style="animation-duration:${ms}ms"></i></div>`);
-    later(next,ms)};
+    const go=()=>{if(k!==ptok)return;ptok++;cancelAnimationFrame(lr);clearTimeout(lt);stage.onclick=null;next()};
+    stage.className='me';stage.onclick=go;heard=vad?false:null;
+    stage.insertAdjacentHTML('beforeend',`<div class="you">🗣 지금 말하세요<small>${vad?'말이 끝나면 자동으로 넘어감':vadOn()&&vadErr?'🎙 '+vadErr:'다 말했으면 화면 탭'}</small></div>${vad?'<div class="mic"><i id="lv"></i></div>':''}<div class="gbar"><i style="animation-duration:${ms}ms"></i></div>`);
+    later(go,ms);hear(go)};
   if(s.say){stage.insertAdjacentHTML('afterbegin','<div class="who">👂 듣기</div>');say(s.say,()=>{const w=stage.querySelector('.who');w&&w.remove();gap()},s.vary)}else gap();
 }
 function mv(d){P.paused=false;$('#pp').textContent='⏸';if(P.sub)return P.sub(d);P.i=Math.min(P.steps.length-1,Math.max(0,P.i+d));show()}
 function pause(){P.paused=!P.paused;$('#pp').textContent=P.paused?'▶':'⏸';P.paused?halt():show()}
-function quit(){halt();P=null;wl&&wl.release();home()}
+function quit(){halt();P=null;micOff();wl&&wl.release();home()}
 
 // ───────── 단계 만들기 ─────────
 const H=(en,ko)=>`<div class="ko">${ko}</div><div class="en">${en}</div>`;
@@ -280,8 +302,8 @@ function drill(q){
     const pass=x=>{x.n++;x.due=Date.now()+(GAPS[x.n]||0)};
     const test=x=>{const full=clean(x.en);
       play({tag:tag(),gap:(words(full)*550+1800)/rate(),html:'<div class="who">🔁 앞에서 배운 문장 — 안 보고 말하기</div>'+H(cue(x.en,x.n),x.ko)},stage,()=>{
-        let bad=false;
-        play({tag:tag(),say:full,rest:1500,html:H(`<b>${full}</b>`,x.ko)+'<button id="bad">😵 틀렸음</button>'},stage,()=>{
+        let bad=heard===false; // 마이크가 켜져 있는데 아무 말도 안 했으면 못 꺼낸 것으로 침
+        play({tag:tag(),say:full,rest:1500,html:H(`<b>${full}</b>`,x.ko)+(bad?'<button id="bad" disabled>🔇 말소리를 못 들음 — 곧 다시 나옵니다</button>':'<button id="bad">😵 틀렸음</button>')},stage,()=>{
           if(bad){x.n=Math.max(0,x.n-1);x.due=Date.now()+GAPS[0]}else pass(x);loop()});
         $('#bad').onclick=e=>{bad=true;e.target.textContent='곧 다시 나옵니다';e.target.disabled=true}})};
     function loop(){
@@ -335,6 +357,8 @@ console.assert(hint('I am.')==='I a·.','hint');
 console.assert(echo1({s:[['a / b','x']]},0).length===3,'echo1: 덩이 2 + 문장 1');
 console.assert(cue('I work / at home.',1).includes('I ···· at ····.')&&cue('a',2).includes('힌트 없음'),'cue: 단서 소거');
 console.assert(drill(Q[1]).length===1&&ladder(Q[1]).length===3,'ladder: 문장 암기 1 + 통째로 2');
+for(const s0 of[300,0]){const st={floor:.01,spoke:0,quiet:0},v=t=>t>=s0&&t<s0+700?.1:.005;let end=0; // (소음 →) 0.7초 말함 → 조용
+ for(let t=0;t<4000&&!end;t+=16)end=vadTick(st,v(t),t)&&t;console.assert(end>s0+1900&&end<s0+2000,'vadTick: 말 끝나고 1.2초 뒤 넘김',s0,end)}
 console.assert(Q[0].s.length+Q[1].s.length===13&&Q[1].id==='intro2','자기소개 6+7로 나눔');
 console.assert(est(Q[1])>5&&est(Q[1])<20,'est: 자기소개 뒷부분 5~20분');
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
@@ -354,6 +378,7 @@ function home(){
     <div class="set"><label>읽는 속도 <input id="rate" type="range" min="0.6" max="1.1" step="0.05" value="${rate()}"><span id="rv">${rate()}배</span></label>
     <label>말할 시간 <input id="pad" type="range" min="1" max="3" step="0.2" value="${pad()}"><span id="pv">${pad()}배</span></label>
     <label><input id="rec" type="checkbox" ${S._rec?'checked':''}> 통째로 말할 때 내 목소리 녹음해서 들려주기 (마이크 허용 필요)</label>
+    <label><input id="vad" type="checkbox" ${vadOn()?'checked':''}> 🎙 말이 끝나면 자동으로 넘김 (소리 크기만 봄 · 음성은 기기 밖으로 안 나감)</label>
     <button id="mic">🎙 마이크 확인</button><span id="micout"></span>
     <span>● 세 개가 차면 완성. ⏰ = 복습할 때가 됨. 질문을 누르면 그 질문만 처음부터 연습.</span>
     <details><summary>이 훈련법의 근거 (연구 논문)</summary><ul style="padding-left:18px;margin:6px 0">
@@ -373,6 +398,7 @@ function home(){
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
   $('#pad').oninput=e=>{S._pad=e.target.value;save();$('#pv').textContent=e.target.value+'배'};
+  $('#vad').onchange=e=>{S._vad=e.target.checked;save()};
   $('#mic').onclick=()=>micTest($('#micout'));
   $('#rec').onchange=e=>{S._rec=e.target.checked;save()};
 }
