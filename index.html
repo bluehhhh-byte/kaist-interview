@@ -72,6 +72,7 @@ const Q=[
 // 자기소개는 13문장이라 한 번에 외우기 길어서 앞·뒤 둘로 나눔. 모의면접에서는 합쳐서 한 번에 답함
 {id:'intro',day:0,t:'자기소개 ① 앞부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (앞부분)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
  ['Hello. / My name is Park Junseong.','안녕하세요. 박준성입니다.'],
+ ['I am happy / to be here today.','오늘 이 자리에 오게 되어 기쁩니다.'],
  ['I work on AI policy / at Gimhae City.','김해시에서 AI 정책 일을 합니다.'],
  ['I studied economics / and urban regeneration.','경제학과 도시재생학을 공부했습니다.'],
  ['My main interest is AX.','제 주된 관심은 AX입니다.'],
@@ -92,7 +93,8 @@ const Q=[
  ['Climate is connected too.','기후도 연결되어 있습니다.'],
  ['But policies are divided.','하지만 정책은 나뉘어 있습니다.'],
  ['So I want to study them together.','그래서 이것들을 함께 공부하고 싶습니다.'],
- ['This school is the best place / for that.','이 대학원이 그러기에 가장 좋은 곳입니다.']]},
+ ['This school is the best place / for that.','이 대학원이 그러기에 가장 좋은 곳입니다.'],
+ ['I am really excited / about this school.','이 대학원이 정말 기대됩니다.']]},
 {id:'master',day:0,t:'박사인데 왜 석사?',q:'You already have a PhD. Why do you want another master\'s degree?',qk:'이미 박사학위가 있는데 왜 석사과정에 지원했습니까?',v:["You have a doctoral degree. Why a master's program?", "Why do you need this degree?", "Isn't a PhD enough?"],s:[
  ['That is a fair question.','당연한 질문입니다.'],
  ['My PhD was about / cities and the economy.','제 박사 연구는 도시와 경제에 관한 것이었습니다.'],
@@ -110,6 +112,18 @@ const Q=[
  ['Sorry. / Let me say that again.','죄송합니다. 다시 말하겠습니다.'],
  ['I don\'t know much about that, / but I want to learn.','그건 잘 모르지만 배우고 싶습니다.'],
  ['Thank you / for your time.','시간 내 주셔서 감사합니다.']]},
+// 일상 대화: 면접 시작·끝의 가벼운 대화와 맞장구. 한글 칸의 (영어)가 상대가 묻는 말
+{id:'small',day:1,only:1,t:'일상 대화·감정 표현',q:'Small talk',qk:'인사, 가벼운 대화, 맞장구',s:[
+ ['I am good, thank you. / A little nervous, but excited.','(How are you today?) 좋습니다, 감사합니다. 조금 떨리지만 설레요.'],
+ ['Yes, / I can hear you clearly.','(Can you hear me well?) 네, 잘 들립니다.'],
+ ['Not really. / I was too excited.','(Did you sleep well?) 별로요. 너무 설렜거든요.'],
+ ['Gimhae is a quiet city / near Busan.','(Where is Gimhae?) 김해는 부산 옆 조용한 도시예요.'],
+ ['These days, / I practice English every day.','(How are you these days?) 요즘 매일 영어 연습을 해요.'],
+ ['Oh, I see. / That makes sense.','아, 그렇군요. 이해가 됩니다.'],
+ ['I really like that idea.','그 생각 정말 좋네요.'],
+ ['I am really happy / to hear that.','그 말을 들으니 정말 기쁩니다.'],
+ ['It was nice / to meet you.','만나서 반가웠습니다.'],
+ ['Have a nice day.','좋은 하루 보내세요.']]},
 {id:'research',day:1,t:'박사 연구',q:'Please tell us about your previous research.',qk:'이전 연구를 소개해 주세요.',v:["What was your PhD research about?", "Tell us about your doctoral thesis.", "What did you study before?"],s:[
  ['I studied suicide risk / in local areas.','지역별 자살 위험을 연구했습니다.'],
  ['I focused on / economic factors.','경제적 요인에 집중했습니다.'],
@@ -158,12 +172,14 @@ const Q=[
  ['Then / we made an AI team.','그다음 AI 팀을 만들었습니다.'],
  ['We built the platform / by ourselves.','플랫폼을 우리 손으로 만들었습니다.'],
  ['No outside company. / No extra budget.','외부 용역도, 추가 예산도 없었습니다.'],
- ['We won a minister\'s award / for it.','이 일로 장관상을 받았습니다.']]},
+ ['We won a minister\'s award / for it.','이 일로 장관상을 받았습니다.'],
+ ['I felt really proud / of my team.','팀이 정말 자랑스러웠습니다.']]},
 {id:'closing',day:1,t:'마지막 한마디',q:'Do you have any last words?',qk:'마지막으로 하고 싶은 말이 있습니까?',v:["Is there anything you want to add?", "Any final comments?", "Anything else you would like to say?"],s:[
  ['Thank you / for this chance.','이런 기회를 주셔서 감사합니다.'],
  ['I learned a lot / in the field.','현장에서 많이 배웠습니다.'],
  ['Now / I want to study more deeply.','이제 더 깊이 공부하고 싶습니다.'],
  ['I will bring it back / to my region.','배운 것을 지역으로 가져가겠습니다.'],
+ ['I really enjoyed / talking with you today.','오늘 이야기 나눠서 정말 즐거웠습니다.'],
  ['Thank you / for listening.','들어 주셔서 감사합니다.']]},
 {id:'ax',day:2,t:'AX란?',q:'What is AX? Can you explain it simply?',qk:'AX가 무엇인지 쉽게 설명해 주세요.',v:["What does AX mean?", "You mentioned AX. What is it?", "How is AI changing industry?"],s:[
  ['AX means / AI transformation.','AX는 AI 전환을 뜻합니다.'],
@@ -187,6 +203,7 @@ const Q=[
  ['So I visited / universities and companies.','그래서 대학과 기업을 찾아갔습니다.'],
  ['At first, / it was hard.','처음에는 힘들었습니다.'],
  ['Everyone wanted / different things.','모두 원하는 것이 달랐습니다.'],
+ ['Honestly, / I was a little worried.','솔직히 조금 걱정했습니다.'],
  ['So I looked for / small common points.','그래서 작은 공통점을 찾았습니다.'],
  ['Step by step, / we built trust.','한 걸음씩 신뢰를 쌓았습니다.'],
  ['I learned / that trust comes first.','신뢰가 먼저라는 것을 배웠습니다.']]},
@@ -202,11 +219,13 @@ const Q=[
  ['I find new tasks early.','필요한 과제를 먼저 찾습니다.'],
  ['Then / I bring people together / and act.','그리고 사람을 모아 실행합니다.'],
  ['My weakness is / speaking English.','제 약점은 영어 말하기입니다.'],
+ ['Honestly, / I am a little nervous now.','솔직히 지금도 조금 떨립니다.'],
  ['But I practice / every day.','하지만 매일 연습합니다.']]},
 {id:'region',day:2,t:'지역의 과제',q:'What is the biggest challenge for your region?',qk:'당신 지역의 가장 큰 과제는 무엇입니까?',v:["What problems does your city face?", "What is the main issue in your region?", "What worries you about your region?"],s:[
  ['The biggest problem is / old industrial cities.','가장 큰 문제는 오래된 산업도시입니다.'],
  ['Factories are getting old.','공장이 낡아 가고 있습니다.'],
  ['Young people are leaving.','청년이 떠나고 있습니다.'],
+ ['That makes me sad.','그게 마음이 아픕니다.'],
  ['But AI is a new chance.','하지만 AI는 새로운 기회입니다.'],
  ['AI data centers are coming, / but climate risk is growing.','AI 데이터센터가 오지만 기후 위험도 커지고 있습니다.'],
  ['We can connect old industries / with new technology.','기존 산업을 새 기술과 연결할 수 있습니다.'],
@@ -391,7 +410,7 @@ console.assert(cue('I work / at home.',1).includes('I ···· at ····.')&&c
 console.assert(drill(Q[1]).length===1&&ladder(Q[1]).length===3,'ladder: 문장 암기 1 + 통째로 2');
 for(const s0 of[300,0]){const st={floor:.01,spoke:0,quiet:0},v=t=>t>=s0&&t<s0+700?.1:.005;let end=0; // (소음 →) 0.7초 말함 → 조용
  for(let t=0;t<4000&&!end;t+=16)end=vadTick(st,v(t),t)&&t;console.assert(end>s0+1900&&end<s0+2000,'vadTick: 말 끝나고 1.2초 뒤 넘김',s0,end)}
-console.assert(Q[0].s.length+Q[1].s.length===14&&Q[1].id==='intro2','자기소개 6+7로 나눔');
+console.assert(Q[0].s.length+Q[1].s.length===15&&Q[1].id==='intro2','자기소개 6+7로 나눔');
 console.assert(est(Q[1])>5&&est(Q[1])<20,'est: 자기소개 뒷부분 5~20분');
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
 
