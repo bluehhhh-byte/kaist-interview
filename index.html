@@ -60,13 +60,15 @@ audio{width:100%;height:40px}
 // s: [영어, 한글]. " / " = 끊어 읽는 자리(한 호흡). 한 문장은 짧게, 같은 문장틀을 여러 답에서 다시 씀.
 const DAYS=['11/14 (토)','11/15 (일)','11/16 (월)','11/17 (화)'];
 const Q=[
-{id:'intro',day:0,t:'자기소개',q:'Please introduce yourself.',qk:'자기소개를 해 주세요.',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
+// 자기소개는 13문장이라 한 번에 외우기 길어서 앞·뒤 둘로 나눔. 모의면접에서는 합쳐서 한 번에 답함
+{id:'intro',day:0,t:'자기소개 ① 앞부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (앞부분)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
  ['Hello. / My name is Park Junseong.','안녕하세요. 박준성입니다.'],
  ['I work on AI policy / at Gimhae City.','김해시에서 AI 정책 일을 합니다.'],
  ['I studied economics / and urban renewal.','경제학과 도시재생을 공부했습니다.'],
  ['My main interest is AX.','제 주된 관심은 AX입니다.'],
  ['AX means using AI / to change old industries.','AX는 AI로 기존 산업을 바꾸는 것입니다.'],
- ['These days, / I work on a power semiconductor project / with Ulsan.','요즘은 울산과 전력반도체 사업을 추진하고 있습니다.'],
+ ['These days, / I work on a power semiconductor project / with Ulsan.','요즘은 울산과 전력반도체 사업을 추진하고 있습니다.']]},
+{id:'intro2',day:0,t:'자기소개 ② 뒷부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (뒷부분: "울산과 전력반도체 사업" 다음부터)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
  ['Power semiconductors are the key / to AI data centers / and physical AI.','전력반도체는 AI 데이터센터와 피지컬 AI의 핵심입니다.'],
  ['They also help / cars and ships.','자동차와 조선에도 도움이 됩니다.'],
  ['So I connect / universities, labs, and companies.','그래서 대학, 연구소, 기업을 연결합니다.'],
@@ -184,8 +186,8 @@ const S=JSON.parse(localStorage.kaistInterview2||'{}');
 const save=()=>localStorage.kaistInterview2=JSON.stringify(S);
 const lv=q=>S[q.id]||0;                 // 0~3. 0=처음, 3=완전히 외움
 const bump=(q,d)=>{S[q.id]=Math.min(3,Math.max(0,lv(q)+d));S[q.id+'_t']=Date.now();save()};
-// 간격 복습(Cepeda 외 2006): 통과할수록 다음 복습까지 간격을 늘림 — 20분 → 4시간 → 20시간
-const due=q=>lv(q)?(S[q.id+'_t']||0)+[0,12e5,144e5,72e6][lv(q)]:0;
+// 간격 복습(Cepeda 외 2006): 통과할수록 다음 복습까지 간격을 늘림 — 20분 → 2시간 → 다음 날 (면접까지 남은 날에 맞춤)
+const due=q=>lv(q)?(S[q.id+'_t']||0)+[0,12e5,72e5,576e5][lv(q)]:0;
 const rate=()=>+S._rate||0.75;
 const pad=()=>+S._pad||2.2; // 말할 시간 배수. 다 말했으면 화면을 탭해 넘기면 되므로 넉넉하게
 const clean=en=>en.replace(/ \/ /g,' ');
@@ -252,15 +254,16 @@ function echo1(q,k,tag){const[en,ko]=q.s[k],cs=en.split(' / '),full=cs.join(' ')
 const cue=(en,n)=>`<span class="hint">${n>=2?'(힌트 없음)':n?en.split(' / ').map(c=>c.split(' ').map((w,i)=>i?w.replace(/[A-Za-z]/g,'·'):w).join(' ')).join(' '):hint(clean(en))}</span>`;
 // 1) 문장 암기. 세 연구를 합친 일정:
 //  - 간격을 늘려 가며 다시 꺼내기(Pimsleur 1967): 본 뒤 5초 → 25초 → 2분
-//  - 기준까지 반복(Rawson & Dunlosky 2011): 한 문장을 3번 맞혀야 끝. 틀리면 한 칸 뒤로
+//  - 기준까지 반복(Rawson & Dunlosky 2011): 한 문장을 NEED번 맞혀야 끝. 틀리면 한 칸 뒤로
+//    논문 권장은 3번이지만 면접까지 시간이 없어 2번으로 줄이고, 나머지는 ②·③과 다음 날 복습이 메움
 //  - 다시 읽지 않고 꺼내기(Roediger & Karpicke 2006): 정답은 말해 본 뒤에만 보여 줌
 // ponytail: 남은 문장이 적으면 간격을 못 채우고 바로 다시 나옴. 다른 답의 문장을 사이에 끼우면 해결되지만 흐름이 복잡해짐
-const GAPS=[5e3,25e3,12e4];
+const GAPS=[5e3,25e3,12e4],NEED=2;
 function drill(q){
   const c=q.s.map(([en,ko],k)=>({en,ko,k,n:0,due:0,seen:false})); // 일시정지 후에도 이어지도록 바깥에 둠
   return[{tag:q.t+' · ① 문장 암기',html:'',wait:(done,stage)=>{
     let cur;const i0=P.i;
-    const tag=()=>`${q.t} · ① 문장 암기 — 완료 ${c.filter(x=>x.n>=3).length}/${c.length}`;
+    const tag=()=>`${q.t} · ① 문장 암기 — 완료 ${c.filter(x=>x.n>=NEED).length}/${c.length}`;
     const seq=(steps,then)=>{let i=0;const go=()=>i<steps.length?play(steps[i++],stage,go):then();go()};
     const intro=x=>seq(echo1(q,x.k,tag()),()=>{x.seen=true;x.due=Date.now()+GAPS[0];loop()});
     const pass=x=>{x.n++;x.due=Date.now()+(GAPS[x.n]||0)};
@@ -271,8 +274,8 @@ function drill(q){
           if(bad){x.n=Math.max(0,x.n-1);x.due=Date.now()+GAPS[0]}else pass(x);loop()});
         $('#bad').onclick=e=>{bad=true;e.target.textContent='곧 다시 나옵니다';e.target.disabled=true}})};
     function loop(){
-      const left=c.filter(x=>x.n<3);if(!left.length){P.sub=null;return done()}
-      $('#pgb').style.width=(i0+c.reduce((a,x)=>a+x.n,0)/(3*c.length))/P.steps.length*100+'%';
+      const left=c.filter(x=>x.n<NEED);if(!left.length){P.sub=null;return done()}
+      $('#pgb').style.width=(i0+c.reduce((a,x)=>a+x.n,0)/(NEED*c.length))/P.steps.length*100+'%';
       const old=left.filter(x=>x.seen).sort((a,b)=>a.due-b.due),fresh=left.find(x=>!x.seen);
       cur=old[0]&&old[0].due<=Date.now()?old[0]:fresh||old[0]; // 때가 된 문장 먼저, 없으면 새 문장
       cur.seen?test(cur):intro(cur)}
@@ -307,6 +310,13 @@ function whole(q,vary){const tag=`${q.t} · ③ 질문 듣고 통째로`,ask=var
 const ladder=(q,all)=>q.only
   ?[...(all||lv(q)<2?drill(q):trans(q)),{tag:q.t,html:'',wait:n=>{bump(q,1);n()}}]
   :[...(all||lv(q)<1?drill(q):lv(q)<2?trans(q):[]),...whole(q,lv(q)>=1)]; // 처음엔 기본 질문, 한 번 통과하면 변형 질문
+// 예상 소요 시간(분). 실제 TTS는 분당 약 150단어 × 읽는 속도로 잡음. 화면을 탭해 일찍 넘기면 더 짧아짐
+const tts=t=>words(t)*.3/rate()+.5,stepT=t=>{const d=tts(t);return d+(d*1.5+1)*pad()+.35};
+const recallT=f=>(words(f)*.55+1.8)/rate()*pad()+tts(f)+1.5;
+const est=q=>((lv(q)<1||q.only&&lv(q)<2
+  ?q.s.reduce((a,[en])=>{const cs=en.split(' / '),f=clean(en);return a+(cs.length>1?cs.reduce((b,c)=>b+stepT(c),0):0)+stepT(f)+NEED*recallT(f)},0)
+  :lv(q)<2||q.only?q.s.reduce((a,[en])=>a+recallT(clean(en)),0):0)
+  +(q.only?0:(w=>w/PACE[lv(q)]*60+tts(q.q)+25)(words(clean(q.s.map(x=>x[0]).join(' '))))))/60;
 const listenAll=()=>Q.flatMap(q=>[{tag:q.t+' · 듣기만',say:q.q,rest:500,html:H(`<b>${q.q}</b>`,q.qk)},...q.s.map(([en,ko])=>({tag:q.t+' · 듣기만',say:clean(en),rest:400,html:H(clean(en),ko)}))]);
 
 console.assert(Q.every(q=>q.only||q.v.length>=3),'질문 변형 3개씩');
@@ -314,16 +324,18 @@ console.assert(hint('I am.')==='I a·.','hint');
 console.assert(echo1({s:[['a / b','x']]},0).length===3,'echo1: 덩이 2 + 문장 1');
 console.assert(cue('I work / at home.',1).includes('I ···· at ····.')&&cue('a',2).includes('힌트 없음'),'cue: 단서 소거');
 console.assert(drill(Q[1]).length===1&&ladder(Q[1]).length===3,'ladder: 문장 암기 1 + 통째로 2');
+console.assert(Q[0].s.length+Q[1].s.length===13&&Q[1].id==='intro2','자기소개 6+7로 나눔');
+console.assert(est(Q[1])>5&&est(Q[1])<20,'est: 자기소개 뒷부분 5~20분');
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
 
 // ───────── 첫 화면 ─────────
 function home(){
   halt();
-  const pool=Q.filter(q=>q.day<=today),sess=[...pool].sort((a,b)=>due(a)-due(b)).slice(0,3); // 새 질문 먼저, 그다음 복습할 때가 된 순
+  const pool=Q.filter(q=>q.day<=today),sess=[...pool].sort((a,b)=>due(a)-due(b)).slice(0,2); // 새 질문 먼저, 그다음 복습할 때가 된 순. 한 번에 2개만
   const d=Math.ceil((new Date('2026-11-18T00:00:00+09:00')-Date.now())/864e5);
   const done=Q.filter(q=>lv(q)>=3).length;
   app.innerHTML=`<h1>KAIST 영어 면접 <span class="chip">${d>0?'D-'+d:d===0?'당일':'종료'}</span><span class="chip">완성 ${done}/${Q.length}</span></h1>
-    <button class="go p" id="b1"><b>▶ 오늘 훈련 시작</b><small>누르면 끝까지 알아서 진행 · 약 20분 · ${sess.map(q=>q.t).join(', ')}</small></button>
+    <button class="go p" id="b1"><b>▶ 오늘 훈련 시작</b><small>누르면 끝까지 알아서 진행 · 약 ${Math.round(sess.reduce((a,q)=>a+est(q),0))}분 · ${sess.map(q=>q.t).join(', ')}</small></button>
     <button class="go" id="b2"><b>🎤 실전 모의면접</b><small>질문 5개를 소리로만 듣고 답하기</small></button>
     <button class="go" id="b3"><b>🎧 듣기만</b><small>전체 질문과 답을 차례로 들려줌 (이동 중에)</small></button>
     ${DAYS.map((dn,i)=>{const qs=Q.filter(q=>q.day===i);return qs.length?`<h3>${i+1}일차 · ${dn}</h3>`+qs.map(q=>
@@ -334,16 +346,17 @@ function home(){
     <span>● 세 개가 차면 완성. ⏰ = 복습할 때가 됨. 질문을 누르면 그 질문만 처음부터 연습.</span>
     <details><summary>이 훈련법의 근거 (연구 논문)</summary><ul style="padding-left:18px;margin:6px 0">
     <li><b>본 뒤 5초·25초·2분 간격으로 다시 꺼내기</b> — Pimsleur (1967). A memory schedule. <i>The Modern Language Journal, 51</i>(2), 73–75.</li>
-    <li><b>한 문장을 3번 맞힐 때까지, 다음 훈련에서 다시</b> — Rawson &amp; Dunlosky (2011). Optimizing schedules of retrieval practice for durable and efficient learning: How much is enough? <i>Journal of Experimental Psychology: General, 140</i>(3), 283–302.</li>
+    <li><b>한 문장을 정해진 횟수만큼 맞힐 때까지, 다음 훈련에서 다시</b> (논문 권장은 3번, 시간 때문에 2번으로 줄임) — Rawson &amp; Dunlosky (2011). Optimizing schedules of retrieval practice for durable and efficient learning: How much is enough? <i>Journal of Experimental Psychology: General, 140</i>(3), 283–302.</li>
     <li><b>맞힐수록 힌트가 사라짐</b> — Glisky, Schacter &amp; Tulving (1986). Learning and retention of computer-related vocabulary in memory-impaired patients: Method of vanishing cues. <i>Journal of Clinical and Experimental Neuropsychology, 8</i>(3), 292–312.</li>
     <li><b>다시 읽지 않고 안 보고 말하기</b> — Roediger &amp; Karpicke (2006). Test-enhanced learning. <i>Psychological Science, 17</i>(3), 249–255.</li>
-    <li><b>시간 간격을 늘려 복습 (20분 → 4시간 → 20시간)</b> — Cepeda, Pashler, Vul, Wixted &amp; Rohrer (2006). Distributed practice in verbal recall tasks. <i>Psychological Bulletin, 132</i>(3), 354–380.</li>
+    <li><b>시간 간격을 늘려 복습 (20분 → 2시간 → 다음 날)</b> — Cepeda, Pashler, Vul, Wixted &amp; Rohrer (2006). Distributed practice in verbal recall tasks. <i>Psychological Bulletin, 132</i>(3), 354–380.</li>
     <li><b>소리 내어 말하기</b> — MacLeod, Gopie, Hourihan, Neary &amp; Ozubko (2010). The production effect. <i>Journal of Experimental Psychology: Learning, Memory, and Cognition, 36</i>(3), 671–685.</li>
     <li><b>같은 답을 점점 짧은 시간에</b> — Nation (1989). Improving speaking fluency. <i>System, 17</i>(3), 377–384.</li>
     <li><b>질문을 실전처럼 바꿔 듣기</b> — Morris, Bransford &amp; Franks (1977). Levels of processing versus transfer appropriate processing. <i>Journal of Verbal Learning and Verbal Behavior, 16</i>(5), 519–533.</li>
     </ul></details></div>`;
   $('#b1').onclick=()=>run(sess.flatMap(q=>ladder(q)));
-  $('#b2').onclick=()=>{const rest=Q.filter(q=>!q.only&&q.id!=='intro').map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([Q[0],...rest].flatMap(q=>whole(q,true)))};
+  $('#b2').onclick=()=>{const[a,b]=Q,intro={...a,t:'자기소개',qk:'자기소개를 해 주세요.',s:[...a.s,...b.s]}; // 실전에선 자기소개를 한 번에
+    const rest=Q.filter(q=>!q.only&&q!==a&&q!==b).map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([intro,...rest].flatMap(q=>whole(q,true)))};
   $('#b3').onclick=()=>run(listenAll());
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
