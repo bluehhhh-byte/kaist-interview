@@ -57,7 +57,7 @@ audio{width:100%;height:40px}
 .sc p{margin:0;padding:8px 6px;border-radius:8px;cursor:pointer}.sc p.on{background:var(--me)}
 .sc small{display:block;color:var(--mut);font-size:14px}
 .qq{font-weight:650;color:var(--acc)}.vv{font-size:13px;color:var(--mut);cursor:default!important}
-.ss{font-size:18px;line-height:1.4}.sl{color:var(--line)}
+.ss{font-size:18px;line-height:1.4}.pa{font-size:15px;color:var(--mut);border-left:3px solid var(--line);margin-left:6px!important}.sl{color:var(--line)}
 .noko .sc small{display:none}
 </style>
 </head>
@@ -68,6 +68,17 @@ audio{width:100%;height:40px}
 // v: 같은 답으로 이어지는 다른 질문 표현 (면접관은 외운 문장 그대로 묻지 않음)
 // s: [영어, 한글]. " / " = 끊어 읽는 자리(한 호흡). 한 문장은 짧게, 같은 문장틀을 여러 답에서 다시 씀.
 const DAYS=['11/14 (토)','11/15 (일)','11/16 (월)','11/17 (화)'];
+// 교수에게 묻기: 면접 끝 "질문 있습니까?" 때 쓸 질문 3개. a = 예상 교수 답변(지어낸 예시, 듣기 연습용), re = 그 뒤 내 반응
+const ASK=[
+ {en:'Can I work with climate / or energy researchers here?',ko:'여기서 기후·에너지 연구자들과 함께 연구할 수 있나요?',
+  a:'Yes. Future strategy covers many fields, including climate and energy. Many of our students work with people from different fields.',ak:'네. 미래전략은 기후와 에너지를 포함해 여러 분야를 다룹니다. 많은 학생이 다른 분야 사람들과 함께 연구합니다.',
+  re:'Thank you. / That is very helpful.',rk:'감사합니다. 큰 도움이 됩니다.'},
+ {en:'What do you expect / from students with work experience?',ko:'실무 경력이 있는 학생에게 무엇을 기대하시나요?',
+  a:'We hope you bring real problems from your work. Your experience in the field can also help other students learn.',ak:'업무에서 겪은 실제 문제를 가져오길 바랍니다. 현장 경험은 다른 학생들에게도 도움이 됩니다.',
+  re:'That is exactly / what I hoped for.',rk:'제가 바라던 바로 그것입니다.'},
+ {en:'Can students do joint research / with outside institutes?',ko:'학생이 외부 기관과 공동연구를 할 수 있나요?',
+  a:'Yes, that is possible. But first, you should make a clear research plan with your advisor.',ak:'네, 가능합니다. 다만 먼저 지도교수와 명확한 연구계획을 세우세요.',
+  re:'I am even more excited now. / Thank you.',rk:'지금 더 기대가 됩니다. 감사합니다.'}];
 const Q=[
 // 자기소개는 13문장이라 한 번에 외우기 길어서 앞·뒤 둘로 나눔. 모의면접에서는 합쳐서 한 번에 답함
 {id:'intro',day:0,t:'자기소개 ① 앞부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (앞부분)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
@@ -181,6 +192,7 @@ const Q=[
  ['I will bring it back / to my region.','배운 것을 지역으로 가져가겠습니다.'],
  ['I really enjoyed / talking with you today.','오늘 이야기 나눠서 정말 즐거웠습니다.'],
  ['Thank you / for listening.','들어 주셔서 감사합니다.']]},
+{id:'ask',day:1,only:1,t:'교수에게 묻기',q:'Do you have any questions for us?',qk:'우리에게 질문 있습니까? (면접 끝)',s:ASK.flatMap(x=>[[x.en,x.ko],[x.re,'(교수 답을 들은 뒤) '+x.rk]])},
 {id:'ax',day:2,t:'AX란?',q:'What is AX? Can you explain it simply?',qk:'AX가 무엇인지 쉽게 설명해 주세요.',v:["What does AX mean?", "You mentioned AX. What is it?", "How is AI changing industry?"],s:[
  ['AX means / AI transformation.','AX는 AI 전환을 뜻합니다.'],
  ['It means using AI / to change how we work.','AI로 일하는 방식을 바꾸는 것입니다.'],
@@ -401,6 +413,14 @@ const est=q=>((lv(q)<1||q.only&&lv(q)<2
   ?q.s.reduce((a,[en])=>{const cs=en.split(' / '),f=clean(en);return a+(cs.length>1?cs.reduce((b,c)=>b+stepT(c),0):0)+stepT(f)+NEED*recallT(f)},0)
   :lv(q)<2||q.only?q.s.reduce((a,[en])=>a+recallT(clean(en)),0):0)
   +(q.only?0:(w=>w/PACE[lv(q)]*60+tts(q.q)+25)(words(clean(q.s.map(x=>x[0]).join(' '))))))/60;
+// 교수에게 묻기 역할극: 면접관이 "질문 있나요?" → 내가 묻기 → 모범 질문 → 교수 답변(다른 목소리) → 내 반응
+const askPlay=()=>ASK.flatMap((x,i)=>{const tag=`교수에게 묻기 ${i+1}/${ASK.length}`,t=y=>(words(clean(y))*550+1800)/rate();return[
+  {tag,say:i?'Do you have any other questions?':'Do you have any questions for us?',vary:true,rest:300,html:`<div class="big">🙋</div><div class="ko" style="text-align:center">면접관: ${i?'다른 질문 있습니까?':'질문 있습니까?'}</div>`},
+  {tag,gap:t(x.en),html:'<div class="who">❓ 내가 묻기</div>'+H(cue(x.en,0),x.ko)},
+  {tag,say:clean(x.en),rest:500,html:H(`<b>${clean(x.en)}</b>`,x.ko)},
+  {tag,say:x.a,vary:true,rest:800,html:`<div class="who">👨‍🏫 교수 답변 (예시)</div><div class="en" style="font-size:20px">${x.a}</div><div class="ko">${x.ak}</div>`},
+  {tag,gap:t(x.re),html:'<div class="who">💬 내 반응</div>'+H(cue(x.re,0),x.rk)},
+  {tag,say:clean(x.re),rest:800,html:H(`<b>${clean(x.re)}</b>`,x.rk)}]});
 const listenAll=()=>Q.flatMap(q=>[{tag:q.t+' · 듣기만',say:q.q,rest:500,html:H(`<b>${q.q}</b>`,q.qk)},...q.s.map(([en,ko])=>({tag:q.t+' · 듣기만',say:clean(en),rest:400,html:H(clean(en),ko)}))]);
 
 console.assert(Q.every(q=>q.only||q.v.length>=3),'질문 변형 3개씩');
@@ -410,6 +430,7 @@ console.assert(cue('I work / at home.',1).includes('I ···· at ····.')&&c
 console.assert(drill(Q[1]).length===1&&ladder(Q[1]).length===3,'ladder: 문장 암기 1 + 통째로 2');
 for(const s0 of[300,0]){const st={floor:.01,spoke:0,quiet:0},v=t=>t>=s0&&t<s0+700?.1:.005;let end=0; // (소음 →) 0.7초 말함 → 조용
  for(let t=0;t<4000&&!end;t+=16)end=vadTick(st,v(t),t)&&t;console.assert(end>s0+1900&&end<s0+2000,'vadTick: 말 끝나고 1.2초 뒤 넘김',s0,end)}
+console.assert(askPlay().length===18&&Q.find(q=>q.id==='ask').s.length===6,'교수에게 묻기: 3개 × 6단계, 문장 6');
 console.assert(Q[0].s.length+Q[1].s.length===15&&Q[1].id==='intro2','자기소개 6+7로 나눔');
 console.assert(est(Q[1])>5&&est(Q[1])<20,'est: 자기소개 뒷부분 5~20분');
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
@@ -424,6 +445,7 @@ function home(){
     <button class="go p" id="b1"><b>▶ 오늘 훈련 시작</b><small>누르면 끝까지 알아서 진행 · 약 ${Math.round(sess.reduce((a,q)=>a+est(q),0))}분 · ${sess.map(q=>q.t).join(', ')}</small></button>
     <button class="go" id="b2"><b>🎤 실전 모의면접</b><small>질문 5개를 소리로만 듣고 답하기</small></button>
     <button class="go" id="b3"><b>🎧 듣기만</b><small>전체 질문과 답을 차례로 들려줌 (이동 중에)</small></button>
+    <button class="go" id="b5"><b>🙋 교수에게 묻기</b><small>면접 끝 "질문 있습니까?" 연습 · 질문 3개 → 교수 답변 듣기 → 내 반응</small></button>
     <button class="go" id="b4"><b>📄 전체 원고 보기</b><small>모든 질문과 답을 한 화면에 · 문장을 누르면 읽어 줌</small></button>
     ${DAYS.map((dn,i)=>{const qs=Q.filter(q=>q.day===i);return qs.length?`<h3>${i+1}일차 · ${dn}</h3>`+qs.map(q=>
       `<button class="item" data-id="${q.id}"><span class="t">${q.t}<small>${q.q}</small></span><span class="dots">${lv(q)&&lv(q)<3&&due(q)<=Date.now()?'⏰ ':''}${'●'.repeat(lv(q))}${'○'.repeat(3-lv(q))}</span></button>`).join(''):`<h3>4일차 · ${dn} — 새 질문 없음. 모의면접 반복</h3>`}).join('')}
@@ -448,6 +470,7 @@ function home(){
     const rest=Q.filter(q=>!q.only&&q!==a&&q!==b).map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([intro,...rest].flatMap(q=>whole(q,true)))};
   $('#b3').onclick=()=>run(listenAll());
   $('#b4').onclick=script;
+  $('#b5').onclick=()=>run(askPlay());
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
   $('#pad').oninput=e=>{S._pad=e.target.value;save();$('#pv').textContent=e.target.value+'배'};
@@ -462,7 +485,8 @@ function script(){
     <nav class="toc">${Q.map(q=>`<a href="#s-${q.id}">${q.t}</a>`).join('')}</nav>
     ${Q.map(q=>`<section class="sc" id="s-${q.id}"><h3>${q.t}</h3><p class="qq" data-say="${q.q}">Q. ${q.q}<small>${q.qk}</small></p>
       ${q.v?`<p class="vv">비슷한 질문: ${q.v.join(' · ')}</p>`:''}
-      ${q.s.map(([en,ko])=>`<p class="ss" data-say="${clean(en).replace(/"/g,'&quot;')}">${en.split(' / ').join(' <span class="sl">/</span> ')}<small>${ko}</small></p>`).join('')}</section>`).join('')}
+      ${q.s.map(([en,ko],k)=>`<p class="ss" data-say="${clean(en).replace(/"/g,'&quot;')}">${en.split(' / ').join(' <span class="sl">/</span> ')}<small>${ko}</small></p>`
+        +(q.id==='ask'&&k%2===0?`<p class="pa" data-say="${ASK[k/2].a}">👨‍🏫 ${ASK[k/2].a}<small>${ASK[k/2].ak} (예상 답변)</small></p>`:'')).join('')}</section>`).join('')}
     <button class="go" id="back2">← 처음으로</button>`;
   $('#back').onclick=$('#back2').onclick=()=>{halt();app.classList.remove('noko');home();scrollTo(0,0)};
   $('#ko').onchange=e=>app.classList.toggle('noko',!e.target.checked);
