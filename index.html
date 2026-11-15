@@ -208,7 +208,18 @@ function say(text,onend,vary){ // vary: 목소리·속도를 무작위로 (실�
 }
 speechSynthesis.getVoices();
 const later=(f,ms)=>{clearTimeout(lt);lt=setTimeout(f,ms)};
-function halt(){clearTimeout(lt);clearTimeout(wd);clearInterval(tm);sayId++;speechSynthesis.cancel();if(mr&&mr.state!=='inactive'){mr.onstop=null;mr.stop()}}
+function halt(){clearTimeout(lt);clearTimeout(wd);clearInterval(tm);sayId++;speechSynthesis.cancel();if(mr&&mr.state!=='inactive'){mr.onstop=null;mr.stop()}stream&&stream.getTracks().forEach(t=>t.stop())}
+const micErr=e=>({NotAllowedError:'브라우저가 마이크를 막았습니다. 주소창 왼쪽 자물쇠 → 마이크 → 허용',NotFoundError:'마이크를 찾지 못했습니다',NotReadableError:'다른 프로그램(줌·팀즈 등)이 마이크를 쓰고 있습니다'}[e.name]||e.name+': '+e.message);
+// 마이크 확인: 10초 동안 소리 크기 막대와 쓰는 마이크 이름을 보여 줌
+function micTest(out){
+  navigator.mediaDevices.getUserMedia({audio:true}).then(st=>{
+    const ac=new AudioContext(),an=ac.createAnalyser(),buf=new Uint8Array(an.fftSize),t0=Date.now();ac.createMediaStreamSource(st).connect(an);
+    out.innerHTML=`🎙 ${st.getAudioTracks()[0].label} — 말해 보세요<div class="gbar"><i id="lvl" style="animation:none;width:0"></i></div>`;
+    let peak=0;const tick=()=>{an.getByteTimeDomainData(buf);const v=Math.max(...buf.map(x=>Math.abs(x-128)))/128;peak=Math.max(peak,v);
+      const b=$('#lvl');if(b&&Date.now()-t0<1e4){b.style.width=Math.min(100,v*250)+'%';return requestAnimationFrame(tick)}
+      st.getTracks().forEach(t=>t.stop());ac.close();
+      if(out.isConnected)out.textContent=peak>.05?'✔ 마이크 정상 입력':'✖ 소리가 안 들어옵니다. Windows 소리 설정 → 입력 장치를 확인하세요'};tick()
+  }).catch(e=>out.textContent='✖ '+micErr(e))}
 const awake=()=>navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>wl=w).catch(()=>{}); // 훈련 중 화면 꺼짐 방지
 document.addEventListener('visibilitychange',()=>{if(P&&!document.hidden)awake()});
 
@@ -297,7 +308,7 @@ function whole(q,vary){const tag=`${q.t} · ③ 질문 듣고 통째로`,ask=var
       <div class="two"><button id="again">🔊 질문 다시</button><button class="ok" id="fin">다 말했다</button></div>`;
     $('#again').onclick=()=>say(ask,null,vary);
     tm=setInterval(()=>{const e=$('#tm');e&&(e.textContent=Math.floor((Date.now()-t0)/1000))},250);
-    if(S._rec)navigator.mediaDevices.getUserMedia({audio:true}).then(st=>{stream=st;chunks=[];mr=new MediaRecorder(st);mr.ondataavailable=e=>chunks.push(e.data);mr.start()}).catch(()=>{});
+    if(S._rec)navigator.mediaDevices.getUserMedia({audio:true}).then(st=>{stream=st;chunks=[];mr=new MediaRecorder(st);mr.ondataavailable=e=>chunks.push(e.data);mr.start()}).catch(e=>{const y=stage.querySelector('.you');y&&y.insertAdjacentHTML('afterend',`<div class="ko">🎙 녹음 안 됨 — ${micErr(e)}</div>`)});
     $('#fin').onclick=()=>{
       const sec=Math.round((Date.now()-t0)/1000);clearInterval(tm);stage.className='';
       stage.innerHTML=`<div class="ko">Q. ${ask}</div><div class="${sec<=goal?'you':'ko'}">${sec<=goal?'✔':'⏱'} 내 답변 ${sec}초 · 목표 ${goal}초${sec<=goal?'':' (넘김)'}</div><div id="au"></div><div class="ans">${q.s.map(x=>`<p>${clean(x[0])}<small>${x[1]}</small></p>`).join('')}</div>
@@ -343,6 +354,7 @@ function home(){
     <div class="set"><label>읽는 속도 <input id="rate" type="range" min="0.6" max="1.1" step="0.05" value="${rate()}"><span id="rv">${rate()}배</span></label>
     <label>말할 시간 <input id="pad" type="range" min="1" max="3" step="0.2" value="${pad()}"><span id="pv">${pad()}배</span></label>
     <label><input id="rec" type="checkbox" ${S._rec?'checked':''}> 통째로 말할 때 내 목소리 녹음해서 들려주기 (마이크 허용 필요)</label>
+    <button id="mic">🎙 마이크 확인</button><span id="micout"></span>
     <span>● 세 개가 차면 완성. ⏰ = 복습할 때가 됨. 질문을 누르면 그 질문만 처음부터 연습.</span>
     <details><summary>이 훈련법의 근거 (연구 논문)</summary><ul style="padding-left:18px;margin:6px 0">
     <li><b>본 뒤 5초·25초·2분 간격으로 다시 꺼내기</b> — Pimsleur (1967). A memory schedule. <i>The Modern Language Journal, 51</i>(2), 73–75.</li>
@@ -361,6 +373,7 @@ function home(){
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
   $('#pad').oninput=e=>{S._pad=e.target.value;save();$('#pv').textContent=e.target.value+'배'};
+  $('#mic').onclick=()=>micTest($('#micout'));
   $('#rec').onchange=e=>{S._rec=e.target.checked;save()};
 }
 home();
