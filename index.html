@@ -51,6 +51,14 @@ h3{margin:20px 0 4px;font-size:14px;color:var(--mut)}
 .mic{height:6px;border-radius:9px;background:#fff1;overflow:hidden}.mic i{display:block;height:100%;width:0;background:var(--acc);transition:width .08s}
 .timer{font-variant-numeric:tabular-nums;font-size:22px;font-weight:600}
 audio{width:100%;height:40px}
+/* 전체 원고 */
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.toc a{font-size:13px;padding:4px 10px;border:1px solid var(--line);border-radius:99px;color:var(--fg);text-decoration:none}
+.sc{scroll-margin-top:10px;border-top:1px solid var(--line);padding:4px 0 10px}
+.sc p{margin:0;padding:8px 6px;border-radius:8px;cursor:pointer}.sc p.on{background:var(--me)}
+.sc small{display:block;color:var(--mut);font-size:14px}
+.qq{font-weight:650;color:var(--acc)}.vv{font-size:13px;color:var(--mut);cursor:default!important}
+.ss{font-size:18px;line-height:1.4}.sl{color:var(--line)}
+.noko .sc small{display:none}
 </style>
 </head>
 <body>
@@ -73,6 +81,7 @@ const Q=[
  ['Power semiconductors are the key / to AI data centers / and physical AI.','전력반도체는 AI 데이터센터와 피지컬 AI의 핵심입니다.'],
  ['They also help / cars and ships.','자동차와 조선에도 도움이 됩니다.'],
  ['So I connect / universities, labs, and companies.','그래서 대학, 연구소, 기업을 연결합니다.'],
+ ['Recently, / I discussed joint research / with the APEC Climate Center.','최근 APEC 기후센터와 공동연구를 논의했습니다.'],
  ['I have one big question.','저에게는 큰 질문이 하나 있습니다.'],
  ['How can new technology / make people\'s lives better?','새 기술이 어떻게 사람들의 삶을 낫게 할 수 있을까?'],
  ['That is why / I want to study at KAIST.','그래서 KAIST에서 공부하고 싶습니다.'],
@@ -80,6 +89,7 @@ const Q=[
 {id:'why',day:0,t:'지원 동기',q:'Why did you apply to the Graduate School of Future Strategy?',qk:'왜 미래전략대학원에 지원했습니까?',v:["Why KAIST?", "Why did you choose this program?", "What brought you to this school?"],s:[
  ['I learned one thing / from my work.','일하면서 한 가지를 배웠습니다.'],
  ['Technology, industry, and cities / are all connected.','기술, 산업, 도시는 모두 연결되어 있습니다.'],
+ ['Climate is connected too.','기후도 연결되어 있습니다.'],
  ['But policies are divided.','하지만 정책은 나뉘어 있습니다.'],
  ['So I want to study them together.','그래서 이것들을 함께 공부하고 싶습니다.'],
  ['This school is the best place / for that.','이 대학원이 그러기에 가장 좋은 곳입니다.']]},
@@ -111,11 +121,22 @@ const Q=[
 {id:'study',day:1,t:'학업 계획',q:'What do you want to study at KAIST?',qk:'KAIST에서 무엇을 공부하고 싶습니까?',v:["What is your research plan?", "What topic are you interested in?", "What will you research here?"],s:[
  ['I have one research question.','연구 질문이 하나 있습니다.'],
  ['How does new technology / change old factory cities?','새 기술은 오래된 공업도시를 어떻게 바꾸는가?'],
- ['These cities have / old factories and older workers.','이 도시들은 공장이 낡고 인력이 고령화되었습니다.'],
- ['I don\'t want to replace / old industries.','기존 산업을 대체하고 싶지 않습니다.'],
- ['I want to connect them / with new technology.','그것을 새 기술과 연결하고 싶습니다.'],
+ ['My first case is / AI data centers.','첫 번째 사례는 AI 데이터센터입니다.'],
+ ['They need / a lot of power and water.','전력과 물을 아주 많이 씁니다.'],
+ ['But most site studies / miss climate risk.','하지만 대부분의 입지 연구는 기후 위험을 빠뜨립니다.'],
+ ['I want to add / heat, drought, and wildfire risk.','폭염, 가뭄, 산불 위험을 더하고 싶습니다.'],
  ['My target is / the southeast region of Korea.','대상은 동남권입니다.'],
  ['I want to find / the best future strategy.','가장 좋은 미래전략을 찾고 싶습니다.']]},
+{id:'dc',day:1,t:'데이터센터·기후 연구',q:'Tell us more about your data center research.',qk:'데이터센터 연구를 더 설명해 주세요.',v:["Why are you interested in AI data centers?", "What is the problem with AI data centers?", "Who will you work with on this research?"],s:[
+ ['Big AI data centers / are coming to Korean regions.','대형 AI 데이터센터가 지역으로 오고 있습니다.'],
+ ['For example, / Ulsan, Gangwon, and Jeolla.','예를 들어 울산, 강원, 전라도입니다.'],
+ ['They bring / jobs and taxes.','일자리와 세수를 가져옵니다.'],
+ ['But they use / a lot of power and water.','하지만 전력과 물을 많이 씁니다.'],
+ ['They can raise / heat and drought risk.','폭염과 가뭄 위험을 키울 수 있습니다.'],
+ ['Recently, / I discussed joint research / with the APEC Climate Center.','최근 APEC 기후센터와 공동연구를 논의했습니다.'],
+ ['We want to add climate risk / to site analysis.','입지 분석에 기후 위험을 더하려 합니다.'],
+ ['I am not against data centers.','데이터센터에 반대하는 것은 아닙니다.'],
+ ['But local people / should share the benefits.','다만 지역 주민도 편익을 나눠야 합니다.']]},
 {id:'after',day:1,t:'졸업 후 계획',q:'What is your plan after graduation?',qk:'졸업 후 계획은 무엇입니까?',v:["What will you do after you graduate?", "What are your future plans?", "What is your long-term goal?"],s:[
  ['I will keep working / for my region.','계속 지역을 위해 일하겠습니다.'],
  ['I will use my research / in real policy.','연구를 실제 정책에 쓰겠습니다.'],
@@ -146,6 +167,7 @@ const Q=[
  ['Power semiconductors / control electricity.','전력반도체는 전기를 제어합니다.'],
  ['AI needs / a lot of electricity.','AI는 전기를 많이 씁니다.'],
  ['So AI data centers need / better power chips.','그래서 AI 데이터센터에는 더 좋은 전력 칩이 필요합니다.'],
+ ['Better chips waste less power.','더 좋은 칩은 전력 낭비를 줄입니다.'],
  ['Electric cars, ships, and robots / need them too.','전기차, 선박, 로봇에도 필요합니다.'],
  ['My region is strong / in cars and ships.','우리 지역은 자동차와 조선이 강합니다.'],
  ['So this is a big chance / for us.','그래서 우리에게 큰 기회입니다.'],
@@ -177,6 +199,7 @@ const Q=[
  ['Factories are getting old.','공장이 낡아 가고 있습니다.'],
  ['Young people are leaving.','청년이 떠나고 있습니다.'],
  ['But AI is a new chance.','하지만 AI는 새로운 기회입니다.'],
+ ['AI data centers are coming, / but climate risk is growing.','AI 데이터센터가 오지만 기후 위험도 커지고 있습니다.'],
  ['We can connect old industries / with new technology.','기존 산업을 새 기술과 연결할 수 있습니다.'],
  ['So my region must / choose its own future.','그래서 지역은 스스로 미래를 선택해야 합니다.']]},
 ];
@@ -359,7 +382,7 @@ console.assert(cue('I work / at home.',1).includes('I ···· at ····.')&&c
 console.assert(drill(Q[1]).length===1&&ladder(Q[1]).length===3,'ladder: 문장 암기 1 + 통째로 2');
 for(const s0 of[300,0]){const st={floor:.01,spoke:0,quiet:0},v=t=>t>=s0&&t<s0+700?.1:.005;let end=0; // (소음 →) 0.7초 말함 → 조용
  for(let t=0;t<4000&&!end;t+=16)end=vadTick(st,v(t),t)&&t;console.assert(end>s0+1900&&end<s0+2000,'vadTick: 말 끝나고 1.2초 뒤 넘김',s0,end)}
-console.assert(Q[0].s.length+Q[1].s.length===13&&Q[1].id==='intro2','자기소개 6+7로 나눔');
+console.assert(Q[0].s.length+Q[1].s.length===14&&Q[1].id==='intro2','자기소개 6+7로 나눔');
 console.assert(est(Q[1])>5&&est(Q[1])<20,'est: 자기소개 뒷부분 5~20분');
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
 
@@ -373,6 +396,7 @@ function home(){
     <button class="go p" id="b1"><b>▶ 오늘 훈련 시작</b><small>누르면 끝까지 알아서 진행 · 약 ${Math.round(sess.reduce((a,q)=>a+est(q),0))}분 · ${sess.map(q=>q.t).join(', ')}</small></button>
     <button class="go" id="b2"><b>🎤 실전 모의면접</b><small>질문 5개를 소리로만 듣고 답하기</small></button>
     <button class="go" id="b3"><b>🎧 듣기만</b><small>전체 질문과 답을 차례로 들려줌 (이동 중에)</small></button>
+    <button class="go" id="b4"><b>📄 전체 원고 보기</b><small>모든 질문과 답을 한 화면에 · 문장을 누르면 읽어 줌</small></button>
     ${DAYS.map((dn,i)=>{const qs=Q.filter(q=>q.day===i);return qs.length?`<h3>${i+1}일차 · ${dn}</h3>`+qs.map(q=>
       `<button class="item" data-id="${q.id}"><span class="t">${q.t}<small>${q.q}</small></span><span class="dots">${lv(q)&&lv(q)<3&&due(q)<=Date.now()?'⏰ ':''}${'●'.repeat(lv(q))}${'○'.repeat(3-lv(q))}</span></button>`).join(''):`<h3>4일차 · ${dn} — 새 질문 없음. 모의면접 반복</h3>`}).join('')}
     <div class="set"><label>읽는 속도 <input id="rate" type="range" min="0.6" max="1.1" step="0.05" value="${rate()}"><span id="rv">${rate()}배</span></label>
@@ -395,12 +419,26 @@ function home(){
   $('#b2').onclick=()=>{const[a,b]=Q,intro={...a,t:'자기소개',qk:'자기소개를 해 주세요.',s:[...a.s,...b.s]}; // 실전에선 자기소개를 한 번에
     const rest=Q.filter(q=>!q.only&&q!==a&&q!==b).map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([intro,...rest].flatMap(q=>whole(q,true)))};
   $('#b3').onclick=()=>run(listenAll());
+  $('#b4').onclick=script;
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
   $('#pad').oninput=e=>{S._pad=e.target.value;save();$('#pv').textContent=e.target.value+'배'};
   $('#vad').onchange=e=>{S._vad=e.target.checked;save()};
   $('#mic').onclick=()=>micTest($('#micout'));
   $('#rec').onchange=e=>{S._rec=e.target.checked;save()};
+}
+// 전체 원고: 질문(영·한)·변형 질문·답 문장. 문장을 누르면 읽어 줌
+function script(){
+  halt();scrollTo(0,0);
+  app.innerHTML=`<div class="top"><button id="back">← 처음으로</button><b style="flex:1">전체 원고</b><label class="set" style="margin:0"><input id="ko" type="checkbox" checked> 한글</label></div>
+    <nav class="toc">${Q.map(q=>`<a href="#s-${q.id}">${q.t}</a>`).join('')}</nav>
+    ${Q.map(q=>`<section class="sc" id="s-${q.id}"><h3>${q.t}</h3><p class="qq" data-say="${q.q}">Q. ${q.q}<small>${q.qk}</small></p>
+      ${q.v?`<p class="vv">비슷한 질문: ${q.v.join(' · ')}</p>`:''}
+      ${q.s.map(([en,ko])=>`<p class="ss" data-say="${clean(en).replace(/"/g,'&quot;')}">${en.split(' / ').join(' <span class="sl">/</span> ')}<small>${ko}</small></p>`).join('')}</section>`).join('')}
+    <button class="go" id="back2">← 처음으로</button>`;
+  $('#back').onclick=$('#back2').onclick=()=>{halt();app.classList.remove('noko');home();scrollTo(0,0)};
+  $('#ko').onchange=e=>app.classList.toggle('noko',!e.target.checked);
+  app.querySelectorAll('[data-say]').forEach(p=>p.onclick=()=>{app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'));p.classList.add('on');say(p.dataset.say,()=>p.classList.remove('on'))});
 }
 home();
 </script>
