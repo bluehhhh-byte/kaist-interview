@@ -57,7 +57,7 @@ audio{width:100%;height:40px}
 .sc p{margin:0;padding:8px 6px;border-radius:8px;cursor:pointer}.sc p.on{background:var(--me)}
 .sc small{display:block;color:var(--mut);font-size:14px}
 .qq{font-weight:650;color:var(--acc)}.vv{font-size:13px;color:var(--mut);cursor:default!important}
-.lines{font-size:16px;line-height:1.55;display:grid;gap:4px}.lines .hint{font-size:16px;letter-spacing:0}.lines .dim{opacity:.45}
+.lines{font-size:16px;line-height:1.55;display:grid;gap:4px}.lines .hint{font-size:16px;letter-spacing:0}.lines .dim{opacity:.45}.lines small{display:block;color:var(--mut);font-size:13px}
 .ss{font-size:18px;line-height:1.4}.pa{font-size:15px;color:var(--mut);border-left:3px solid var(--line);margin-left:6px!important}.sl{color:var(--line)}
 .noko .sc small{display:none}
 </style>
@@ -68,7 +68,6 @@ audio{width:100%;height:40px}
 // ───────── 질문·원고 (여기만 고치면 됨) ─────────
 // v: 같은 답으로 이어지는 다른 질문 표현 (면접관은 외운 문장 그대로 묻지 않음)
 // s: [영어, 한글]. " / " = 끊어 읽는 자리(한 호흡). 한 문장은 짧게, 같은 문장틀을 여러 답에서 다시 씀.
-const DAYS=['11/14 (토)','11/15 (일)','11/16 (월)','11/17 (화)'];
 // 자기소개 (사용자가 직접 쓴 원고, 2026-11-16). " / "만 끊어 읽기용으로 넣음
 const INTRO=[
  ['Hello. / My name is Park Junseong.','안녕하세요. 박준성입니다.'],
@@ -99,10 +98,8 @@ const ASK=[
   a:'Yes, that is possible. But first, you should make a clear research plan with your advisor.',ak:'네, 가능합니다. 다만 먼저 지도교수와 명확한 연구계획을 세우세요.',
   re:'I am even more excited now. / Thank you.',rk:'지금 더 기대가 됩니다. 감사합니다.'}];
 const Q=[
-// 자기소개는 질문 목록에선 앞·뒤 둘로 나누고, 모의면접과 ⭐ 집중 연습에선 합쳐서 한 번에 답함
-{id:'intro',day:0,t:'자기소개 ① 앞부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (앞부분)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:INTRO.slice(0,7)},
-{id:'intro2',day:0,t:'자기소개 ② 뒷부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (뒷부분: "울산과 전력반도체" 다음부터)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:INTRO.slice(7)},
-{id:'why',day:0,t:'지원 동기',q:'Why did you apply to the Graduate School of Future Strategy?',qk:'왜 미래전략대학원에 지원했습니까?',v:["Why KAIST?", "Why did you choose this program?", "What brought you to this school?"],s:[
+{id:'intro',t:'자기소개',q:'Please introduce yourself.',qk:'자기소개를 해 주세요.',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:INTRO,b:BLK},
+{id:'why',t:'지원 동기',q:'Why did you apply to the Graduate School of Future Strategy?',qk:'왜 미래전략대학원에 지원했습니까?',v:["Why KAIST?", "Why did you choose this program?", "What brought you to this school?"],s:[
  ['I learned one thing / from my work.','일하면서 한 가지를 배웠습니다.'],
  ['Technology, industry, and cities / are all connected.','기술, 산업, 도시는 모두 연결되어 있습니다.'],
  ['Climate is connected too.','기후도 연결되어 있습니다.'],
@@ -110,25 +107,30 @@ const Q=[
  ['So I want to study them together.','그래서 이것들을 함께 공부하고 싶습니다.'],
  ['This school is the best place / for that.','이 대학원이 그러기에 가장 좋은 곳입니다.'],
  ['I am really excited / about this school.','이 대학원이 정말 기대됩니다.']]},
-{id:'master',day:0,t:'박사인데 왜 석사?',q:'You already have a PhD. Why do you want another master\'s degree?',qk:'이미 박사학위가 있는데 왜 석사과정에 지원했습니까?',v:["You have a doctoral degree. Why a master's program?", "Why do you need this degree?", "Isn't a PhD enough?"],s:[
+{id:'master',t:'박사인데 왜 석사?',q:'You already have a PhD. Why do you want another master\'s degree?',qk:'이미 박사학위가 있는데 왜 석사과정에 지원했습니까?',v:["You have a doctoral degree. Why a master's program?", "Why do you need this degree?", "Isn't a PhD enough?"],s:[
  ['That is a fair question.','당연한 질문입니다.'],
  ['My PhD was about / cities and the economy.','제 박사 연구는 도시와 경제에 관한 것이었습니다.'],
  ['But now / I work on AI and new industries.','하지만 지금은 AI와 신산업 일을 합니다.'],
  ['I need new tools / for this new work.','이 새로운 일에는 새로운 도구가 필요합니다.'],
  ['I am not here / for a degree.','학위 때문에 온 것이 아닙니다.'],
  ['I am here / to learn a new way of thinking.','새로운 사고방식을 배우러 왔습니다.']]},
-{id:'survive',day:0,only:1,t:'생존 표현',q:'Useful phrases',qk:'못 알아들었거나 막혔을 때',s:[
- ['Sorry, / could you say that again?','죄송합니다, 다시 말씀해 주시겠어요?'],
- ['Could you speak / a little slowly, please?','조금 천천히 말씀해 주시겠어요?'],
- ['Let me think / for a moment.','잠시 생각해 보겠습니다.'],
- ['Do you mean / my research plan?','제 연구계획을 말씀하시는 건가요?'],
- ['That is a good question.','좋은 질문입니다.'],
- ['I am not sure, / but I will try.','확실하지 않지만 답해 보겠습니다.'],
- ['Sorry. / Let me say that again.','죄송합니다. 다시 말하겠습니다.'],
- ['I don\'t know much about that, / but I want to learn.','그건 잘 모르지만 배우고 싶습니다.'],
- ['Thank you / for your time.','시간 내 주셔서 감사합니다.']]},
+// 생존 표현 대본: 한글 칸 (괄호) = 이 말을 쓰는 상황
+{id:'survive',only:1,t:'생존 표현',q:'Useful phrases',qk:'못 알아들었거나 막혔을 때 쓰는 말',s:[
+ ['Sorry, / could you say that again?','(못 알아들었을 때) 죄송합니다, 다시 말씀해 주시겠어요?'],
+ ['Could you speak / a little slowly, please?','(말이 너무 빠를 때) 조금 천천히 말씀해 주시겠어요?'],
+ ['Sorry, / I can\'t hear you well.','(소리가 잘 안 들릴 때) 죄송합니다, 잘 안 들립니다.'],
+ ['Sorry, / what does that word mean?','(모르는 단어가 나왔을 때) 죄송합니다, 그 단어가 무슨 뜻인가요?'],
+ ['Do you mean / my research plan?','(질문이 헷갈릴 때) 제 연구계획을 말씀하시는 건가요?'],
+ ['That is a good question. / Let me think for a moment.','(생각할 시간이 필요할 때) 좋은 질문입니다. 잠시 생각해 보겠습니다.'],
+ ['Sorry, / I am a little nervous. / Let me start again.','(머리가 하얘졌을 때) 죄송합니다, 조금 긴장했네요. 처음부터 다시 하겠습니다.'],
+ ['Sorry. / Let me say that again.','(말이 꼬였을 때) 죄송합니다. 다시 말하겠습니다.'],
+ ['I don\'t know the English word. / Let me explain it simply.','(영어 단어가 안 떠오를 때) 영어 단어가 생각나지 않네요. 쉽게 설명하겠습니다.'],
+ ['I am not sure, / but I will try.','(답이 확실하지 않을 때) 확실하지 않지만 답해 보겠습니다.'],
+ ['I don\'t know much about that, / but I want to learn.','(모르는 주제일 때) 그건 잘 모르지만 배우고 싶습니다.'],
+ ['In short, / that is my answer.','(답을 끝낼 때) 정리하면, 그게 제 답입니다.'],
+ ['Thank you / for your time.','(면접이 끝날 때) 시간 내 주셔서 감사합니다.']]},
 // 일상 대화: 면접 시작·끝의 가벼운 대화와 맞장구. 한글 칸의 (영어)가 상대가 묻는 말
-{id:'small',day:1,only:1,t:'일상 대화·감정 표현',q:'Small talk',qk:'인사, 가벼운 대화, 맞장구',s:[
+{id:'small',only:1,t:'일상 대화·감정 표현',q:'Small talk',qk:'인사, 가벼운 대화, 맞장구',s:[
  ['I am good, thank you. / A little nervous, but excited.','(How are you today?) 좋습니다, 감사합니다. 조금 떨리지만 설레요.'],
  ['Yes, / I can hear you clearly.','(Can you hear me well?) 네, 잘 들립니다.'],
  ['Not really. / I was too excited.','(Did you sleep well?) 별로요. 너무 설렜거든요.'],
@@ -139,7 +141,7 @@ const Q=[
  ['I am really happy / to hear that.','그 말을 들으니 정말 기쁩니다.'],
  ['It was nice / to meet you.','만나서 반가웠습니다.'],
  ['Have a nice day.','좋은 하루 보내세요.']]},
-{id:'research',day:1,t:'박사 연구',q:'Please tell us about your previous research.',qk:'이전 연구를 소개해 주세요.',v:["What was your PhD research about?", "Tell us about your doctoral thesis.", "What did you study before?"],s:[
+{id:'research',t:'박사 연구',q:'Please tell us about your previous research.',qk:'이전 연구를 소개해 주세요.',v:["What was your PhD research about?", "Tell us about your doctoral thesis.", "What did you study before?"],s:[
  ['I studied suicide risk / in local areas.','지역별 자살 위험을 연구했습니다.'],
  ['I focused on / economic factors.','경제적 요인에 집중했습니다.'],
  ['I found one thing.','한 가지를 발견했습니다.'],
@@ -147,7 +149,7 @@ const Q=[
  ['So the problem is / not just personal.','그래서 이 문제는 개인만의 문제가 아닙니다.'],
  ['It comes from / the local economy.','지역 경제에서 비롯됩니다.'],
  ['I proposed a policy / to the National Assembly Research Service.','국회입법조사처에 정책을 제안했습니다.']]},
-{id:'study',day:1,t:'학업 계획',q:'What do you want to study at KAIST?',qk:'KAIST에서 무엇을 공부하고 싶습니까?',v:["What is your research plan?", "What topic are you interested in?", "What will you research here?"],s:[
+{id:'study',t:'학업 계획',q:'What do you want to study at KAIST?',qk:'KAIST에서 무엇을 공부하고 싶습니까?',v:["What is your research plan?", "What topic are you interested in?", "What will you research here?"],s:[
  // 연구과제: 기후위기 시대 동남권 AI 데이터센터의 입지 적정성과 지역사회 수용성 연구
  ['My research topic is / AI data centers / in the southeast region.','제 연구 주제는 동남권 AI 데이터센터입니다.'],
  ['That means / Ulsan, Busan, and Gyeongnam.','울산, 부산, 경남입니다.'],
@@ -159,7 +161,7 @@ const Q=[
  ['Second, / is it safe from climate risk?','둘째, 기후 위험에 안전한가?'],
  ['Third, / do local people get the benefits?','셋째, 지역 주민이 편익을 얻는가?'],
  ['My goal is / a clear guide / for choosing locations.','목표는 입지를 고르는 명확한 기준입니다.']]},
-{id:'dc',day:1,t:'왜 이 연구인가',q:'Why is your research important?',qk:'이 연구가 왜 중요합니까?',v:["Tell us more about your data center research.", "What is the problem with AI data centers?", "Why is climate important for data centers?"],s:[
+{id:'dc',t:'왜 이 연구인가',q:'Why is your research important?',qk:'이 연구가 왜 중요합니까?',v:["Tell us more about your data center research.", "What is the problem with AI data centers?", "Why is climate important for data centers?"],s:[
  ['Data centers bring / jobs and taxes.','데이터센터는 일자리와 세수를 가져옵니다.'],
  ['But the region pays / for power, water, and heat.','하지만 전력, 물, 열의 비용은 지역이 냅니다.'],
  ['Climate change / makes this harder.','기후변화가 이를 더 어렵게 만듭니다.'],
@@ -169,19 +171,19 @@ const Q=[
  ['Recently, / I discussed joint research / with the APEC Climate Center.','최근 APEC 기후센터와 공동연구를 논의했습니다.'],
  ['I am not against data centers.','데이터센터에 반대하는 것은 아닙니다.'],
  ['I want to know / what the region gets / and what it pays.','지역이 무엇을 얻고 무엇을 내는지 알고 싶습니다.']]},
-{id:'method',day:1,t:'연구 방법',q:'How will you do this research?',qk:'이 연구를 어떻게 하겠습니까?',v:["What is your research method?", "What data will you use?", "How will you answer your research question?"],s:[
+{id:'method',t:'연구 방법',q:'How will you do this research?',qk:'이 연구를 어떻게 하겠습니까?',v:["What is your research method?", "What data will you use?", "How will you answer your research question?"],s:[
  ['I will make maps.','지도를 만들겠습니다.'],
  ['I will put climate risk / on top of possible sites.','후보지 위에 기후 위험을 겹쳐 보겠습니다.'],
  ['I will use climate data / for 2030 and 2050.','2030년과 2050년 기후 자료를 쓰겠습니다.'],
  ['I will also check / power, water, and jobs.','전력, 물, 일자리도 살펴보겠습니다.'],
  ['And I will ask / local people.','그리고 지역 주민에게 묻겠습니다.']]},
-{id:'after',day:1,t:'졸업 후 계획',q:'What is your plan after graduation?',qk:'졸업 후 계획은 무엇입니까?',v:["What will you do after you graduate?", "What are your future plans?", "What is your long-term goal?"],s:[
+{id:'after',t:'졸업 후 계획',q:'What is your plan after graduation?',qk:'졸업 후 계획은 무엇입니까?',v:["What will you do after you graduate?", "What are your future plans?", "What is your long-term goal?"],s:[
  ['I will keep working / for my region.','계속 지역을 위해 일하겠습니다.'],
  ['I will use my research / in real policy.','연구를 실제 정책에 쓰겠습니다.'],
  ['Many regions / just accept the future.','많은 지역이 미래를 그냥 받아들입니다.'],
  ['I want to change that.','저는 그것을 바꾸고 싶습니다.'],
  ['I want to help my region / choose its own future.','지역이 스스로 미래를 선택하도록 돕고 싶습니다.']]},
-{id:'achieve',day:1,t:'업무 성과',q:'What is your biggest achievement at work?',qk:'직장에서 가장 큰 성과는 무엇입니까?',v:["What are you most proud of in your career?", "Tell us about your work experience.", "What have you done at your job?"],s:[
+{id:'achieve',t:'업무 성과',q:'What is your biggest achievement at work?',qk:'직장에서 가장 큰 성과는 무엇입니까?',v:["What are you most proud of in your career?", "Tell us about your work experience.", "What have you done at your job?"],s:[
  ['My best work is / the Gimhae AI Innovation Platform.','가장 큰 성과는 김해 AI 혁신 플랫폼입니다.'],
  ['First, / I started an AI study group / at work.','먼저 직장에서 AI 연구모임을 시작했습니다.'],
  ['Then / we made an AI team.','그다음 AI 팀을 만들었습니다.'],
@@ -189,22 +191,22 @@ const Q=[
  ['No outside company. / No extra budget.','외부 용역도, 추가 예산도 없었습니다.'],
  ['We won a minister\'s award / for it.','이 일로 장관상을 받았습니다.'],
  ['I felt really proud / of my team.','팀이 정말 자랑스러웠습니다.']]},
-{id:'closing',day:1,t:'마지막 한마디',q:'Do you have any last words?',qk:'마지막으로 하고 싶은 말이 있습니까?',v:["Is there anything you want to add?", "Any final comments?", "Anything else you would like to say?"],s:[
+{id:'closing',t:'마지막 한마디',q:'Do you have any last words?',qk:'마지막으로 하고 싶은 말이 있습니까?',v:["Is there anything you want to add?", "Any final comments?", "Anything else you would like to say?"],s:[
  ['Thank you / for this chance.','이런 기회를 주셔서 감사합니다.'],
  ['I learned a lot / in the field.','현장에서 많이 배웠습니다.'],
  ['Now / I want to study more deeply.','이제 더 깊이 공부하고 싶습니다.'],
  ['I will bring it back / to my region.','배운 것을 지역으로 가져가겠습니다.'],
  ['I really enjoyed / talking with you today.','오늘 이야기 나눠서 정말 즐거웠습니다.'],
  ['Thank you / for listening.','들어 주셔서 감사합니다.']]},
-{id:'ask',day:1,only:1,t:'교수에게 묻기',q:'Do you have any questions for us?',qk:'우리에게 질문 있습니까? (면접 끝)',s:ASK.flatMap(x=>[[x.en,x.ko],[x.re,'(교수 답을 들은 뒤) '+x.rk]])},
-{id:'ax',day:2,t:'AX란?',q:'What is AX? Can you explain it simply?',qk:'AX가 무엇인지 쉽게 설명해 주세요.',v:["What does AX mean?", "You mentioned AX. What is it?", "How is AI changing industry?"],s:[
+{id:'ask',only:1,t:'교수에게 묻기',q:'Do you have any questions for us?',qk:'우리에게 질문 있습니까? (면접 끝)',s:ASK.flatMap(x=>[[x.en,x.ko],[x.re,'(교수 답을 들은 뒤) '+x.rk]])},
+{id:'ax',t:'AX란?',q:'What is AX? Can you explain it simply?',qk:'AX가 무엇인지 쉽게 설명해 주세요.',v:["What does AX mean?", "You mentioned AX. What is it?", "How is AI changing industry?"],s:[
  ['AX means / AI transformation.','AX는 AI 전환을 뜻합니다.'],
  ['It means using AI / to change how we work.','AI로 일하는 방식을 바꾸는 것입니다.'],
  ['It is not just / buying software.','단순히 소프트웨어를 사는 것이 아닙니다.'],
  ['It changes / products, jobs, and factories.','제품과 일자리, 공장을 바꿉니다.'],
  ['It also changes the city.','도시도 바꿉니다.'],
  ['So AX is a question / for the whole region.','그래서 AX는 지역 전체의 문제입니다.']]},
-{id:'power',day:2,t:'전력반도체',q:'Why are power semiconductors important?',qk:'전력반도체는 왜 중요합니까?',v:["What are power semiconductors?", "Why do you care about power semiconductors?", "Tell us about your power semiconductor project."],s:[
+{id:'power',t:'전력반도체',q:'Why are power semiconductors important?',qk:'전력반도체는 왜 중요합니까?',v:["What are power semiconductors?", "Why do you care about power semiconductors?", "Tell us about your power semiconductor project."],s:[
  ['Power semiconductors / control electricity.','전력반도체는 전기를 제어합니다.'],
  ['AI needs / a lot of electricity.','AI는 전기를 많이 씁니다.'],
  ['So AI data centers need / better power chips.','그래서 AI 데이터센터에는 더 좋은 전력 칩이 필요합니다.'],
@@ -213,7 +215,7 @@ const Q=[
  ['My region is strong / in cars and ships.','우리 지역은 자동차와 조선이 강합니다.'],
  ['So this is a big chance / for us.','그래서 우리에게 큰 기회입니다.'],
  ['I am connecting three universities / for this.','이를 위해 세 대학을 연결하고 있습니다.']]},
-{id:'leader',day:2,t:'리더십 사례',q:'Tell us about a time you showed leadership.',qk:'리더십을 발휘한 사례를 말해 주세요.',v:["Describe your leadership experience.", "Have you ever led a project?", "Tell us about a difficult project."],s:[
+{id:'leader',t:'리더십 사례',q:'Tell us about a time you showed leadership.',qk:'리더십을 발휘한 사례를 말해 주세요.',v:["Describe your leadership experience.", "Have you ever led a project?", "Tell us about a difficult project."],s:[
  ['I started / the AI WAVE Committee.','AI WAVE 위원회를 출범시켰습니다.'],
  ['City hall cannot do AX alone.','시청 혼자서는 AX를 할 수 없습니다.'],
  ['So I visited / universities and companies.','그래서 대학과 기업을 찾아갔습니다.'],
@@ -223,21 +225,21 @@ const Q=[
  ['So I looked for / small common points.','그래서 작은 공통점을 찾았습니다.'],
  ['Step by step, / we built trust.','한 걸음씩 신뢰를 쌓았습니다.'],
  ['I learned / that trust comes first.','신뢰가 먼저라는 것을 배웠습니다.']]},
-{id:'balance',day:2,t:'일과 학업 병행',q:'You have a full-time job. How will you manage work and study?',qk:'일과 학업을 어떻게 병행하겠습니까?',v:["How will you study while working?", "Do you have enough time for this program?", "Can you handle both your job and school?"],s:[
+{id:'balance',t:'일과 학업 병행',q:'You have a full-time job. How will you manage work and study?',qk:'일과 학업을 어떻게 병행하겠습니까?',v:["How will you study while working?", "Do you have enough time for this program?", "Can you handle both your job and school?"],s:[
  ['It will be hard, / but I am ready.','힘들겠지만 준비되어 있습니다.'],
  ['My work and my study / are connected.','제 일과 공부는 연결되어 있습니다.'],
  ['I can use what I learn / at work.','배운 것을 업무에 쓸 수 있습니다.'],
  ['My work problems / become my research questions.','업무의 문제가 연구 질문이 됩니다.'],
  ['I will use / evenings and weekends.','저녁과 주말을 쓰겠습니다.'],
  ['I can do both.','둘 다 해낼 수 있습니다.']]},
-{id:'strength',day:2,t:'강점과 약점',q:'What are your strengths and weaknesses?',qk:'강점과 약점은 무엇입니까?',v:["What is your greatest strength?", "What is your weak point?", "How would you describe yourself?"],s:[
+{id:'strength',t:'강점과 약점',q:'What are your strengths and weaknesses?',qk:'강점과 약점은 무엇입니까?',v:["What is your greatest strength?", "What is your weak point?", "How would you describe yourself?"],s:[
  ['My strength is / connecting people.','제 강점은 사람을 연결하는 것입니다.'],
  ['I find new tasks early.','필요한 과제를 먼저 찾습니다.'],
  ['Then / I bring people together / and act.','그리고 사람을 모아 실행합니다.'],
  ['My weakness is / speaking English.','제 약점은 영어 말하기입니다.'],
  ['Honestly, / I am a little nervous now.','솔직히 지금도 조금 떨립니다.'],
  ['But I practice / every day.','하지만 매일 연습합니다.']]},
-{id:'region',day:2,t:'지역의 과제',q:'What is the biggest challenge for your region?',qk:'당신 지역의 가장 큰 과제는 무엇입니까?',v:["What problems does your city face?", "What is the main issue in your region?", "What worries you about your region?"],s:[
+{id:'region',t:'지역의 과제',q:'What is the biggest challenge for your region?',qk:'당신 지역의 가장 큰 과제는 무엇입니까?',v:["What problems does your city face?", "What is the main issue in your region?", "What worries you about your region?"],s:[
  ['The biggest problem is / old industrial cities.','가장 큰 문제는 오래된 산업도시입니다.'],
  ['Factories are getting old.','공장이 낡아 가고 있습니다.'],
  ['Young people are leaving.','청년이 떠나고 있습니다.'],
@@ -248,20 +250,22 @@ const Q=[
  ['So my region must / choose its own future.','그래서 지역은 스스로 미래를 선택해야 합니다.']]},
 ];
 
+// 면접 흐름 순서. 이 순서대로 외우고, 목록·전체 원고도 이 순서
+const ORDER=['small','intro','survive','why','study','dc','method','master','research','achieve','leader','ax','power','strength','balance','region','after','ask','closing'];
+Q.sort((a,b)=>ORDER.indexOf(a.id)-ORDER.indexOf(b.id));
+
 // ───────── 상태 ─────────
 const $=s=>document.querySelector(s),app=$('#app');
 const S=JSON.parse(localStorage.kaistInterview2||'{}');
 const save=()=>localStorage.kaistInterview2=JSON.stringify(S);
-const lv=q=>S[q.id]||0;                 // 0~3. 0=처음, 3=완전히 외움
-const bump=(q,d)=>{S[q.id]=Math.min(3,Math.max(0,lv(q)+d));S[q.id+'_t']=Date.now();save()};
-// 간격 복습(Cepeda 외 2006): 통과할수록 다음 복습까지 간격을 늘림 — 20분 → 2시간 → 다음 날 (면접까지 남은 날에 맞춤)
-const due=q=>lv(q)?(S[q.id+'_t']||0)+[0,12e5,72e5,576e5][lv(q)]:0;
+const lv=q=>S['c_'+q.id]||0; // 0=아직, 1=외움(복습 남음), 2=복습 통과
+const setLv=(q,n)=>{S['c_'+q.id]=n;save()};
 const rate=()=>+S._rate||0.75;
 const pad=()=>+S._pad||2.2; // 말할 시간 배수. 다 말했으면 화면을 탭해 넘기면 되므로 넉넉하게
 const clean=en=>en.replace(/ \/ /g,' ');
 const words=t=>t.split(/\s+/).length;
 const hint=t=>t.split(' ').map(w=>w[0]+w.slice(1).replace(/[A-Za-z]/g,'·')).join(' '); // 첫 글자만 남김
-const today=Math.min(3,Math.max(0,Math.floor((Date.now()-new Date('2026-11-14T00:00:00+09:00'))/864e5)));
+const shuffle=a=>a.map(x=>[Math.random(),x]).sort((p,r)=>p[0]-r[0]).map(x=>x[1]);
 
 // ───────── 읽어주기 ─────────
 let sayId=0,wd,lt,tm,wl,mr,chunks,stream;
@@ -321,7 +325,7 @@ function run(steps,onDone){
   show();
 }
 function show(){
-  halt();P.sub=null;const s=P.steps[P.i];
+  halt();const s=P.steps[P.i];
   if(!s){const d=P.onDone;P=null;micOff();wl&&wl.release();return d?d():home()}
   $('#pgb').style.width=P.i/P.steps.length*100+'%';
   const stage=$('#stage'),next=()=>{P.i++;show()};
@@ -340,59 +344,60 @@ function play(s,stage,next){ // 한 단계: 보여 주고 → 읽어 주고 → 
     later(go,ms);hear(go,s.quiet)};
   if(s.say){stage.insertAdjacentHTML('afterbegin','<div class="who">👂 듣기</div>');say(s.say,()=>{const w=stage.querySelector('.who');w&&w.remove();gap()},s.vary)}else gap();
 }
-function mv(d){P.paused=false;$('#pp').textContent='⏸';if(P.sub)return P.sub(d);P.i=Math.min(P.steps.length-1,Math.max(0,P.i+d));show()}
+function mv(d){P.paused=false;$('#pp').textContent='⏸';P.i=Math.min(P.steps.length-1,Math.max(0,P.i+d));show()}
 function pause(){P.paused=!P.paused;$('#pp').textContent=P.paused?'▶':'⏸';P.paused?halt():show()}
 function quit(){halt();P=null;micOff();wl&&wl.release();home()}
 
 // ───────── 단계 만들기 ─────────
+// 모든 답을 같은 순서로 외움 (learn):
+//  1) 🗺 흐름: 한글로 무슨 말을 어떤 순서로 하는지 먼저 봄 (뜻을 알고 외워야 오래 감)
+//  2) 블록 쌓기: 2~3문장씩 듣고 따라 한 뒤, 매번 "처음부터 여기까지" 안 보고 말함. 앞 블록은 힌트를 줄임(사라지는 단서)
+//  3) 통째로: 덩이 첫 단어 힌트 → 한글만 → 실전(질문만 듣고)
+// 복습(review): 새 답 3개를 외울 때마다 "다음" 버튼이 외운 답을 질문만으로 다시 묻게 함. 😀면 ●
 const H=(en,ko)=>`<div class="ko">${ko}</div><div class="en">${en}</div>`;
 // 듣고 따라 하기 (한 문장): 끊어서 한 덩이씩 → 문장 통째로
 function echo1(q,k,tag){const[en,ko]=q.s[k],cs=en.split(' / '),full=cs.join(' '),out=[];
   if(cs.length>1)cs.forEach((c,j)=>out.push({tag,say:c,gap:true,html:H(cs.map((x,m)=>m===j?`<b>${x}</b>`:`<span class="dim">${x}</span>`).join(' '),ko)}));
   out.push({tag,say:full,gap:true,html:H(`<b>${full}</b>`,ko)});return out}
-// 사라지는 단서(Glisky·Schacter·Tulving 1986): 맞힐수록 힌트가 줄어듦. 0=모든 단어 첫 글자, 1=덩이 첫 단어만, 2=한글만
+// 사라지는 단서(Glisky·Schacter·Tulving 1986): 0=모든 단어 첫 글자, 1=덩이 첫 단어만, 2=힌트 없음
 const cue=(en,n)=>`<span class="hint">${n>=2?'(힌트 없음)':n?en.split(' / ').map(c=>c.split(' ').map((w,i)=>i?w.replace(/[A-Za-z]/g,'·'):w).join(' ')).join(' '):hint(clean(en))}</span>`;
-// 1) 문장 암기. 세 연구를 합친 일정:
-//  - 간격을 늘려 가며 다시 꺼내기(Pimsleur 1967): 본 뒤 5초 → 25초 → 2분
-//  - 기준까지 반복(Rawson & Dunlosky 2011): 한 문장을 NEED번 맞혀야 끝. 틀리면 한 칸 뒤로
-//    논문 권장은 3번이지만 면접까지 시간이 없어 2번으로 줄이고, 나머지는 ②·③과 다음 날 복습이 메움
-//  - 다시 읽지 않고 꺼내기(Roediger & Karpicke 2006): 정답은 말해 본 뒤에만 보여 줌
-// ponytail: 남은 문장이 적으면 간격을 못 채우고 바로 다시 나옴. 다른 답의 문장을 사이에 끼우면 해결되지만 흐름이 복잡해짐
-const GAPS=[5e3,25e3,12e4],NEED=2;
-function drill(q){
-  const c=q.s.map(([en,ko],k)=>({en,ko,k,n:0,due:0,seen:false})); // 일시정지 후에도 이어지도록 바깥에 둠
-  return[{tag:q.t+' · ① 문장 암기',html:'',wait:(done,stage)=>{
-    let cur;const i0=P.i;
-    const tag=()=>`${q.t} · ① 문장 암기 — 완료 ${c.filter(x=>x.n>=NEED).length}/${c.length}`;
-    const seq=(steps,then)=>{let i=0;const go=()=>i<steps.length?play(steps[i++],stage,go):then();go()};
-    const intro=x=>seq(echo1(q,x.k,tag()),()=>{x.seen=true;x.due=Date.now()+GAPS[0];loop()});
-    const pass=x=>{x.n++;x.due=Date.now()+(GAPS[x.n]||0)};
-    const test=x=>{const full=clean(x.en);
-      play({tag:tag(),gap:(words(full)*550+1800)/rate(),html:'<div class="who">🔁 앞에서 배운 문장 — 안 보고 말하기</div>'+H(cue(x.en,x.n),x.ko)},stage,()=>{
-        let bad=heard===false; // 마이크가 켜져 있는데 아무 말도 안 했으면 못 꺼낸 것으로 침
-        play({tag:tag(),say:full,rest:1500,html:H(`<b>${full}</b>`,x.ko)+(bad?'<button id="bad" disabled>🔇 말소리를 못 들음 — 곧 다시 나옵니다</button>':'<button id="bad">😵 틀렸음</button>')},stage,()=>{
-          if(bad){x.n=Math.max(0,x.n-1);x.due=Date.now()+GAPS[0]}else pass(x);loop()});
-        $('#bad').onclick=e=>{bad=true;e.target.textContent='곧 다시 나옵니다';e.target.disabled=true}})};
-    function loop(){
-      const left=c.filter(x=>x.n<NEED);if(!left.length){P.sub=null;return done()}
-      $('#pgb').style.width=(i0+c.reduce((a,x)=>a+x.n,0)/(NEED*c.length))/P.steps.length*100+'%';
-      const old=left.filter(x=>x.seen).sort((a,b)=>a.due-b.due),fresh=left.find(x=>!x.seen);
-      cur=old[0]&&old[0].due<=Date.now()?old[0]:fresh||old[0]; // 때가 된 문장 먼저, 없으면 새 문장
-      cur.seen?test(cur):intro(cur)}
-    P.sub=d=>{halt();if(!cur)return loop();if(d<0)return cur.seen?test(cur):intro(cur); // ⏮ 지금 문장 다시, ⏭ 넘김
-      if(cur.seen)pass(cur);else{cur.seen=true;cur.due=Date.now()+GAPS[0]}loop()};
-    loop()}}]}
-// 2) 빠른 복습: 덩이 첫 단어만 보고 한 번씩
-function trans(q){return q.s.flatMap(([en,ko],k)=>{const full=clean(en),tag=`${q.t} · ② 빠른 복습 ${k+1}/${q.s.length}`;
-  return[{tag,gap:(words(full)*550+1800)/rate(),html:H(cue(en,1),ko)},{tag,say:full,rest:700,html:H(`<b>${full}</b>`,ko)}]})}
-// 3) 질문 듣고 통째로: 문장 첫머리만 보고 답변 전체 → 모범답안과 비교, 스스로 판정
-const PACE=[90,100,110,120]; // 수준별 목표 속도(분당 단어). 😀 누를수록 목표 시간이 줄어듦
-function whole(q,vary){const tag=`${q.t} · ③ 질문 듣고 통째로`,ask=vary&&q.v?q.v[Math.floor(Math.random()*q.v.length)]:q.q;return[
+const all=(q,n=q.s.length)=>clean(q.s.slice(0,n).map(x=>x[0]).join(' '));
+const recite=(q,n)=>(words(all(q,n))*550+1800*n)/rate();
+// 블록: 자기소개는 뜻 덩어리(b), 나머지는 2~3문장씩 고르게
+const blocks=q=>q.b||(k=>Array.from({length:k},(_,i)=>[Math.round(q.s.length*(i+1)/k),'']))(Math.ceil(q.s.length/3));
+// 외울 때 보이는 줄: 새 문장은 힌트+한글, 앞 문장은 힌트만, lvOf≥2면 한글만
+const lines=(q,n,lvOf)=>`<div class="lines">${q.s.slice(0,n).map(([en,ko],k)=>`<div>${lvOf(k)>=2?ko:cue(en,lvOf(k))+(lvOf(k)?'':`<small>${ko}</small>`)}</div>`).join('')}</div>`;
+const full=(q,n,from=0)=>`<div class="lines">${q.s.slice(0,n).map(([en],k)=>`<div${k<from?' class="dim"':''}>${clean(en)}</div>`).join('')}</div>`;
+function learn(q){const B=blocks(q),N=q.s.length,tag=t=>`${q.t} · ${t}`;let a=0;return[
+  {tag:tag('🗺 흐름'),rest:3000+N*1500,html:`<div class="who">🗺 뜻 흐름부터 — 무슨 말을 어떤 순서로 하는지</div><div class="ko">Q. ${q.qk}</div><div class="lines">${B.map(([e,name],b)=>`<div><b>${b+1}${name?'. '+name:''}</b> ${q.s.slice(b?B[b-1][0]:0,e).map(x=>x[1]).join(' ')}</div>`).join('')}</div>`},
+  ...B.flatMap(([e,name],b)=>{const s=a;a=e;const t=tag(`블록 ${b+1}/${B.length}${name?' '+name:''}`);return[
+    ...q.s.slice(s,e).flatMap((_,j)=>echo1(q,s+j,t)),
+    ...q.only?quick(q,q.s.slice(s,e)):[ // 표현 모음은 서로 이어진 글이 아니라 상황 보고 바로 말하기만
+    {tag:t+' · 처음부터 여기까지',gap:recite(q,e),quiet:3000,html:'<div class="who">🔁 처음부터 여기까지 안 보고 말하기</div>'+lines(q,e,k=>k<s?1:0)},
+    {tag:t+' · 확인',say:all(q,e),rest:800,html:full(q,e,s)}]]}),
+  ...q.only?[]:[{tag:tag('통째로 ① 첫 단어'),gap:recite(q,N),quiet:3000,html:'<div class="who">🔁 처음부터 끝까지</div>'+lines(q,N,()=>1)},
+  {tag:tag('통째로 ① 확인'),say:all(q),rest:800,html:full(q,N)},
+  {tag:tag('통째로 ② 한글만'),gap:recite(q,N),quiet:3000,html:'<div class="who">🔁 한글만 보고 처음부터 끝까지</div>'+lines(q,N,()=>2)}],
+  ...test(q,true)]}
+// 판정: 외우는 중엔 😀/😵 모두 ◐(복습 남음), 복습·모의면접에서 😀면 ●, 😵면 ◐로
+const mark=(q,ok,learning)=>setLv(q,ok&&!learning?2:1);
+const judge=(q,learning)=>({tag:q.t+' · 판정',html:'<div class="ko">막힘없이 말했나요?</div><div class="two"><button id="no">😵 아직</button><button class="ok" id="yes">😀 됐다</button></div>',
+  wait:next=>{$('#no').onclick=()=>{mark(q,0,learning);next()};$('#yes').onclick=()=>{mark(q,1,learning);next()}}});
+// 상황 보고 바로 말하기: 한글 (괄호)의 영어는 상대가 하는 말이라 소리로 들려줌
+const quick=(q,list)=>list.flatMap(([en,ko])=>{const m=ko.match(/^\(([A-Za-z][^)]*)\)/),f=clean(en),tag=q.t+' · 상황 보고 바로 말하기';
+  return[{tag,say:m&&m[1],vary:true,gap:(words(f)*550+1800)/rate(),html:H(cue(en,2),ko)},{tag,say:f,rest:700,html:H(`<b>${f}</b>`,ko)}]});
+// 시험: 답변은 질문 듣고 통째로, 표현 모음은 상황(또는 상대 말)만 보고 바로, 교수에게 묻기는 역할극
+function test(q,learning){
+  if(q.id==='ask')return[...askPlay(learning?ASK:[ASK[Math.random()*ASK.length|0]]),judge(q,learning)];
+  if(q.only)return[...quick(q,shuffle(q.s)),judge(q,learning)];
+  return whole(q,!learning,learning)}
+// 질문 듣고 통째로: 시간 재고 → 모범답안·녹음과 비교 → 스스로 판정
+function whole(q,vary,learning){const tag=`${q.t} · ${learning?'통째로 ③ 실전':'질문 듣고 답하기'}`,ask=vary&&q.v?q.v[Math.random()*q.v.length|0]:q.q;return[
   {tag,say:ask,vary,rest:200,html:`<div class="big">🔊</div><div class="ko" style="text-align:center">질문을 들으세요</div>`},
   {tag,html:'',wait:(next,stage)=>{
-    const goal=Math.round(words(clean(q.s.map(x=>x[0]).join(' ')))/PACE[lv(q)]*60),t0=Date.now();
+    const goal=Math.round(words(all(q))/90*60),t0=Date.now(); // 목표: 분당 90단어
     stage.className='me';
-    stage.innerHTML=`<div class="ko">Q. ${ask===q.q?q.qk:ask}</div><div class="cue">${q.s.map(x=>clean(x[0]).split(' ').slice(0,2).join(' ')+' …').join('<br>')}</div>
+    stage.innerHTML=`<div class="ko">Q. ${ask===q.q?q.qk:ask}</div><details><summary class="ko">💡 막히면 첫마디 보기</summary><div class="cue">${q.s.map(x=>clean(x[0]).split(' ').slice(0,2).join(' ')+' …').join('<br>')}</div></details>
       <div class="you">🗣 답변하세요 <span class="timer" id="tm">0</span>초 <small>목표 ${goal}초</small></div><div class="gbar"><i style="animation-duration:${goal}s"></i></div>
       <div class="two"><button id="again">🔊 질문 다시</button><button class="ok" id="fin">다 말했다</button></div>`;
     $('#again').onclick=()=>say(ask,null,vary);
@@ -403,122 +408,98 @@ function whole(q,vary){const tag=`${q.t} · ③ 질문 듣고 통째로`,ask=var
       stage.innerHTML=`<div class="ko">Q. ${ask}</div><div class="${sec<=goal?'you':'ko'}">${sec<=goal?'✔':'⏱'} 내 답변 ${sec}초 · 목표 ${goal}초${sec<=goal?'':' (넘김)'}</div><div id="au"></div><div class="ans">${q.s.map(x=>`<p>${clean(x[0])}<small>${x[1]}</small></p>`).join('')}</div>
         <button id="mdl">▶ 모범답안 듣기</button><div class="two"><button id="no">😵 아직</button><button class="ok" id="yes">😀 됐다</button></div>`;
       if(mr&&mr.state!=='inactive'){mr.onstop=()=>{const a=$('#au');a&&(a.innerHTML=`<audio controls src="${URL.createObjectURL(new Blob(chunks,{type:mr.mimeType}))}"></audio>`);stream.getTracks().forEach(t=>t.stop())};mr.stop()}
-      $('#mdl').onclick=()=>say(clean(q.s.map(x=>x[0]).join(' ')));
-      $('#no').onclick=()=>{bump(q,-1);next()};$('#yes').onclick=()=>{bump(q,1);next()};
+      $('#mdl').onclick=()=>say(all(q));
+      $('#no').onclick=()=>{mark(q,0,learning);next()};$('#yes').onclick=()=>{mark(q,1,learning);next()};
     }}}]}
-// 수준에 맞춰 단계를 줄임: 처음엔 ①문장 암기+③, 한 번 통과하면 ②빠른 복습+③, 그다음은 ③만
-const ladder=(q,all)=>q.only
-  ?[...(all||lv(q)<2?drill(q):trans(q)),{tag:q.t,html:'',wait:n=>{bump(q,1);n()}}]
-  :[...(all||lv(q)<1?drill(q):lv(q)<2?trans(q):[]),...whole(q,lv(q)>=1)]; // 처음엔 기본 질문, 한 번 통과하면 변형 질문
-// 예상 소요 시간(분). 실제 TTS는 분당 약 150단어 × 읽는 속도로 잡음. 화면을 탭해 일찍 넘기면 더 짧아짐
-const tts=t=>words(t)*.3/rate()+.5,stepT=t=>{const d=tts(t);return d+(d*1.5+1)*pad()+.35};
-const recallT=f=>(words(f)*.55+1.8)/rate()*pad()+tts(f)+1.5;
-const est=q=>((lv(q)<1||q.only&&lv(q)<2
-  ?q.s.reduce((a,[en])=>{const cs=en.split(' / '),f=clean(en);return a+(cs.length>1?cs.reduce((b,c)=>b+stepT(c),0):0)+stepT(f)+NEED*recallT(f)},0)
-  :lv(q)<2||q.only?q.s.reduce((a,[en])=>a+recallT(clean(en)),0):0)
-  +(q.only?0:(w=>w/PACE[lv(q)]*60+tts(q.q)+25)(words(clean(q.s.map(x=>x[0]).join(' '))))))/60;
-// ⭐ 자기소개 집중 연습 — 긴 글을 통째로 외우는 순서
-//  1) 뼈대 지도: 블록 이름과 문장 첫마디를 먼저 봄
-//  2) 블록 쌓기(누적 반복): 새 블록 문장을 듣고 따라 한 뒤, 매번 "처음부터 여기까지" 안 보고 말함
-//     이미 외운 앞 블록은 힌트를 줄이고(덩이 첫 단어), 새 블록만 첫 글자 힌트
-//  3) 통째로: 덩이 첫 단어 힌트 → 한글만 → 질문만 듣고 실전처럼(시간·자기 판정)
-const FOCUS={id:'intro',t:'자기소개',q:'Please introduce yourself.',qk:'자기소개를 해 주세요.',s:INTRO};
-// 예상 시간(분): 읽어 주는 시간 + 따라 하기 + 암송(말 끝 감지로 보통 최대 시간보다 일찍 끝남) + 실전 1분
-const focusMin=()=>focus().reduce((a,s)=>a+(s.say?tts(s.say):0)+(s.gap===true?tts(s.say)*1.5*pad()+1:s.gap?s.gap/1000:0)+(s.rest||0)/1000,0)/60+1;
-const recite=n=>(words(clean(INTRO.slice(0,n).map(x=>x[0]).join(' ')))*550+1800*n)/rate();
-const lines=(n,lvOf)=>`<div class="lines">${INTRO.slice(0,n).map(([en,ko],k)=>lvOf(k)>=2?`<div>${ko}</div>`:`<div>${cue(en,lvOf(k))}</div>`).join('')}</div>`;
-const full=(n,from=0)=>`<div class="lines">${INTRO.slice(0,n).map(([en],k)=>`<div${k<from?' class="dim"':''}>${clean(en)}</div>`).join('')}</div>`;
-function focus(){const tag=t=>'⭐ 자기소개 집중 · '+t;let a=0;return[
-  {tag:tag('뼈대 지도'),rest:9000,html:`<div class="who">🗺 순서만 먼저 머리에 넣으세요</div><div class="lines">${BLK.map(([e,name],b)=>{const s=b?BLK[b-1][0]:0;
-    return`<div><b>${b+1}. ${name}</b> — ${INTRO.slice(s,e).map(x=>clean(x[0]).split(' ').slice(0,2).join(' ')+'…').join(' ')}</div>`}).join('')}</div>`},
-  ...BLK.flatMap(([e,name],b)=>{const s=a;a=e;const t=tag(`${b+1}/${BLK.length} ${name}`);return[
-    ...INTRO.slice(s,e).flatMap((_,j)=>echo1(FOCUS,s+j,t)),
-    {tag:t+' · 처음부터 여기까지',gap:recite(e),quiet:3000,html:`<div class="who">🔁 처음부터 "${name}"까지 안 보고 말하기</div>`+lines(e,k=>k<s?1:0)},
-    {tag:t+' · 확인',say:clean(INTRO.slice(0,e).map(x=>x[0]).join(' ')),rest:800,html:full(e,s)}]}),
-  {tag:tag('통째로 ① 첫 단어 힌트'),gap:recite(14),quiet:3000,html:'<div class="who">🔁 처음부터 끝까지</div>'+lines(14,()=>1)},
-  {tag:tag('통째로 ① 확인'),say:clean(INTRO.map(x=>x[0]).join(' ')),rest:800,html:full(14)},
-  {tag:tag('통째로 ② 한글만'),gap:recite(14),quiet:3000,html:'<div class="who">🔁 한글만 보고 처음부터 끝까지</div>'+lines(14,()=>2)},
-  ...whole(FOCUS,false).map(x=>({...x,tag:tag('통째로 ③ 실전')}))]}
-// 교수에게 묻기 역할극: 면접관이 "질문 있나요?" → 내가 묻기 → 모범 질문 → 교수 답변(다른 목소리) → 내 반응
-const askPlay=()=>ASK.flatMap((x,i)=>{const tag=`교수에게 묻기 ${i+1}/${ASK.length}`,t=y=>(words(clean(y))*550+1800)/rate();return[
+// 교수에게 묻기 역할극: 면접관 "질문 있나요?" → 내가 묻기 → 모범 질문 → 교수 답변(다른 목소리) → 내 반응
+const askPlay=list=>list.flatMap((x,i)=>{const tag=`교수에게 묻기 ${i+1}/${list.length}`,t=y=>(words(clean(y))*550+1800)/rate();return[
   {tag,say:i?'Do you have any other questions?':'Do you have any questions for us?',vary:true,rest:300,html:`<div class="big">🙋</div><div class="ko" style="text-align:center">면접관: ${i?'다른 질문 있습니까?':'질문 있습니까?'}</div>`},
   {tag,gap:t(x.en),html:'<div class="who">❓ 내가 묻기</div>'+H(cue(x.en,0),x.ko)},
   {tag,say:clean(x.en),rest:500,html:H(`<b>${clean(x.en)}</b>`,x.ko)},
   {tag,say:x.a,vary:true,rest:800,html:`<div class="who">👨‍🏫 교수 답변 (예시)</div><div class="en" style="font-size:20px">${x.a}</div><div class="ko">${x.ak}</div>`},
   {tag,gap:t(x.re),html:'<div class="who">💬 내 반응</div>'+H(cue(x.re,0),x.rk)},
   {tag,say:clean(x.re),rest:800,html:H(`<b>${clean(x.re)}</b>`,x.rk)}]});
-const listenAll=()=>Q.flatMap(q=>[{tag:q.t+' · 듣기만',say:q.q,rest:500,html:H(`<b>${q.q}</b>`,q.qk)},...q.s.map(([en,ko])=>({tag:q.t+' · 듣기만',say:clean(en),rest:400,html:H(clean(en),ko)}))]);
+// 모의면접: 인사·자기소개 먼저, 가운데는 섞고, 질문하기·마지막 한마디로 끝. 질문은 변형 표현·다른 목소리
+function mock(cards){const head=cards.filter(q=>q.id==='small'||q.id==='intro'),end=cards.filter(q=>q.id==='ask'||q.id==='closing');
+  return[...head,...shuffle(cards.filter(q=>!head.includes(q)&&!end.includes(q))),...end].flatMap(q=>test(q,false))}
+// "다음" 버튼: 새 답 3개마다 복습, 아니면 다음 새 답, 다 외웠으면 모의면접
+const learned=()=>Q.filter(q=>lv(q)===1);
+function nextUp(){const r=learned(),fresh=Q.find(q=>!lv(q));
+  if(r.length&&((S._since||0)>=3||!fresh))return{t:'🔁 복습: '+r.map(q=>q.t).join(', '),go:()=>run(mock(r),()=>{S._since=0;save();home()})};
+  if(fresh)return{t:`📘 ${Q.indexOf(fresh)+1}. ${fresh.t} 외우기`,go:()=>learnOne(fresh)};
+  return{t:'🎤 다 외웠습니다 — 모의면접',go:()=>run(mock(Q))}}
+const learnOne=q=>run(learn(q),()=>{S._since=(S._since||0)+1;save();home()});
+// 예상 시간(분): 읽어 주는 시간 + 따라 하기 + 암송(말 끝 감지로 보통 최대 시간보다 일찍 끝남) + 판정
+const tts=t=>words(t)*.3/rate()+.5;
+const mins=steps=>steps.reduce((a,s)=>a+(s.say?tts(s.say):0)+(s.gap===true?tts(s.say)*1.5*pad()+1:s.gap?s.gap/1000:0)+(s.rest||0)/1000+(s.wait?40:0),0)/60;
 
 console.assert(Q.every(q=>q.only||q.v.length>=3),'질문 변형 3개씩');
+console.assert(Q.map(q=>q.id).join()===ORDER.join(),'면접 흐름 순서 = ORDER, 빠진 답 없음');
 console.assert(hint('I am.')==='I a·.','hint');
 console.assert(echo1({s:[['a / b','x']]},0).length===3,'echo1: 덩이 2 + 문장 1');
 console.assert(cue('I work / at home.',1).includes('I ···· at ····.')&&cue('a',2).includes('힌트 없음'),'cue: 단서 소거');
-console.assert(drill(Q[1]).length===1&&ladder(Q[1]).length===3,'ladder: 문장 암기 1 + 통째로 2');
+console.assert(blocks({s:Array(7)}).map(x=>x[0]).join()==='2,5,7'&&blocks({s:Array(10)}).length===4,'blocks: 2~3문장씩');
+console.assert(INTRO.length===BLK[BLK.length-1][0]&&blocks(Q[1])===BLK,'자기소개 블록');
 for(const s0 of[300,0]){const st={floor:.01,spoke:0,quiet:0},v=t=>t>=s0&&t<s0+700?.1:.005;let end=0; // (소음 →) 0.7초 말함 → 조용
  for(let t=0;t<4000&&!end;t+=16)end=vadTick(st,v(t),t)&&t;console.assert(end>s0+1900&&end<s0+2000,'vadTick: 말 끝나고 1.2초 뒤 넘김',s0,end)}
-console.assert(askPlay().length===18&&Q.find(q=>q.id==='ask').s.length===6,'교수에게 묻기: 3개 × 6단계, 문장 6');
-console.assert(Q[0].s.length+Q[1].s.length===14&&INTRO.length===BLK[BLK.length-1][0]&&Q[1].id==='intro2','자기소개 6+7로 나눔');
-console.assert(est(Q[1])>5&&est(Q[1])<20,'est: 자기소개 뒷부분 5~20분');
+console.assert(askPlay(ASK).length===18&&test(Q.find(q=>q.id==='ask'),false).length===7,'교수에게 묻기: 3개 × 6단계, 복습은 1개 + 판정');
+console.assert(test(Q[0],false).length===Q[0].s.length*2+1&&whole(Q[1],true).length===2,'test: 표현 모음 상황 2단계씩 + 판정, 답변은 통째로');
+console.assert(mins(learn(Q[1]))>10&&mins(learn(Q[1]))<40,'자기소개 외우기 10~40분',mins(learn(Q[1])));
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
 
 // ───────── 첫 화면 ─────────
 function home(){
   halt();
-  const pool=Q.filter(q=>q.day<=today),sess=[...pool].sort((a,b)=>due(a)-due(b)).slice(0,2); // 새 질문 먼저, 그다음 복습할 때가 된 순. 한 번에 2개만
-  const d=Math.ceil((new Date('2026-11-18T00:00:00+09:00')-Date.now())/864e5);
-  const done=Q.filter(q=>lv(q)>=3).length;
-  app.innerHTML=`<h1>KAIST 영어 면접 <span class="chip">${d>0?'D-'+d:d===0?'당일':'종료'}</span><span class="chip">완성 ${done}/${Q.length}</span></h1>
-    <button class="go p" id="b0"><b>⭐ 자기소개 집중 연습</b><small>뼈대 → 블록 6개 쌓기 → 통째로 3번 · 약 ${Math.round(focusMin())}분 · 하루 2~3번</small></button>
-    <button class="go" id="b1"><b>▶ 오늘 훈련 시작</b><small>누르면 끝까지 알아서 진행 · 약 ${Math.round(sess.reduce((a,q)=>a+est(q),0))}분 · ${sess.map(q=>q.t).join(', ')}</small></button>
-    <button class="go" id="b2"><b>🎤 실전 모의면접</b><small>질문 5개를 소리로만 듣고 답하기</small></button>
-    <button class="go" id="b3"><b>🎧 듣기만</b><small>전체 질문과 답을 차례로 들려줌 (이동 중에)</small></button>
-    <button class="go" id="b5"><b>🙋 교수에게 묻기</b><small>면접 끝 "질문 있습니까?" 연습 · 질문 3개 → 교수 답변 듣기 → 내 반응</small></button>
-    <button class="go" id="b4"><b>📄 전체 원고 보기</b><small>모든 질문과 답을 한 화면에 · 문장을 누르면 읽어 줌</small></button>
-    ${DAYS.map((dn,i)=>{const qs=Q.filter(q=>q.day===i);return qs.length?`<h3>${i+1}일차 · ${dn}</h3>`+qs.map(q=>
-      `<button class="item" data-id="${q.id}"><span class="t">${q.t}<small>${q.q}</small></span><span class="dots">${lv(q)&&lv(q)<3&&due(q)<=Date.now()?'⏰ ':''}${'●'.repeat(lv(q))}${'○'.repeat(3-lv(q))}</span></button>`).join(''):`<h3>4일차 · ${dn} — 새 질문 없음. 모의면접 반복</h3>`}).join('')}
-    <div class="set"><label>읽는 속도 <input id="rate" type="range" min="0.6" max="1.1" step="0.05" value="${rate()}"><span id="rv">${rate()}배</span></label>
+  const d=Math.ceil((new Date('2026-11-18T00:00:00+09:00')-Date.now())/864e5),n=nextUp();
+  const left=Q.filter(q=>!lv(q)).reduce((a,q)=>a+mins(learn(q)),0);
+  app.innerHTML=`<h1>KAIST 영어 면접 <span class="chip">${d>0?'D-'+d:d===0?'당일':'종료'}</span><span class="chip">● ${Q.filter(q=>lv(q)===2).length}/${Q.length}</span></h1>
+    <button class="go p" id="b1"><b>▶ ${n.t}</b><small>이 버튼만 계속 누르세요 · 새 답 3개마다 복습이 자동으로 끼어듦 · 남은 외우기 약 ${Math.round(left)}분</small></button>
+    <button class="go" id="b2"><b>🎤 모의면접 전체</b><small>외운 답 전부 · 질문만 듣고 답하기 · 자기 전과 면접 날 아침에</small></button>
+    <button class="go" id="b4"><b>📄 전체 원고</b><small>모든 질문과 답 · 처음부터 다 듣기 · 생존 표현 대본</small></button>
+    <h3>면접 흐름 — 위에서부터 순서대로 외움 · 누르면 그 답만 다시</h3>
+    ${Q.map((q,i)=>`<button class="item" data-id="${q.id}"><span class="t">${i+1}. ${q.t}<small>${q.qk} · ${Math.round(mins(learn(q)))}분</small></span><span class="dots">${'○◐●'[lv(q)]}</span></button>`).join('')}
+    <div class="set"><span>○ 아직 · ◐ 외움(복습 남음) · ● 복습 통과</span>
+    <label>읽는 속도 <input id="rate" type="range" min="0.6" max="1.1" step="0.05" value="${rate()}"><span id="rv">${rate()}배</span></label>
     <label>말할 시간 <input id="pad" type="range" min="1" max="3" step="0.2" value="${pad()}"><span id="pv">${pad()}배</span></label>
     <label><input id="rec" type="checkbox" ${S._rec?'checked':''}> 통째로 말할 때 내 목소리 녹음해서 들려주기 (마이크 허용 필요)</label>
     <label><input id="vad" type="checkbox" ${vadOn()?'checked':''}> 🎙 말이 끝나면 자동으로 넘김 (소리 크기만 봄 · 음성은 기기 밖으로 안 나감)</label>
     <button id="mic">🎙 마이크 확인</button><span id="micout"></span>
-    <span>● 세 개가 차면 완성. ⏰ = 복습할 때가 됨. 질문을 누르면 그 질문만 처음부터 연습.</span>
     <details><summary>이 훈련법의 근거 (연구 논문)</summary><ul style="padding-left:18px;margin:6px 0">
-    <li><b>본 뒤 5초·25초·2분 간격으로 다시 꺼내기</b> — Pimsleur (1967). A memory schedule. <i>The Modern Language Journal, 51</i>(2), 73–75.</li>
-    <li><b>한 문장을 정해진 횟수만큼 맞힐 때까지, 다음 훈련에서 다시</b> (논문 권장은 3번, 시간 때문에 2번으로 줄임) — Rawson &amp; Dunlosky (2011). Optimizing schedules of retrieval practice for durable and efficient learning: How much is enough? <i>Journal of Experimental Psychology: General, 140</i>(3), 283–302.</li>
-    <li><b>맞힐수록 힌트가 사라짐</b> — Glisky, Schacter &amp; Tulving (1986). Learning and retention of computer-related vocabulary in memory-impaired patients: Method of vanishing cues. <i>Journal of Clinical and Experimental Neuropsychology, 8</i>(3), 292–312.</li>
     <li><b>다시 읽지 않고 안 보고 말하기</b> — Roediger &amp; Karpicke (2006). Test-enhanced learning. <i>Psychological Science, 17</i>(3), 249–255.</li>
-    <li><b>시간 간격을 늘려 복습 (20분 → 2시간 → 다음 날)</b> — Cepeda, Pashler, Vul, Wixted &amp; Rohrer (2006). Distributed practice in verbal recall tasks. <i>Psychological Bulletin, 132</i>(3), 354–380.</li>
+    <li><b>외울수록 힌트가 사라짐</b> — Glisky, Schacter &amp; Tulving (1986). Learning and retention of computer-related vocabulary in memory-impaired patients: Method of vanishing cues. <i>Journal of Clinical and Experimental Neuropsychology, 8</i>(3), 292–312.</li>
+    <li><b>시간을 두고 다시 꺼내기 (새 답 3개마다 복습, 자기 전·다음 날 아침 모의면접)</b> — Cepeda, Pashler, Vul, Wixted &amp; Rohrer (2006). Distributed practice in verbal recall tasks. <i>Psychological Bulletin, 132</i>(3), 354–380.</li>
     <li><b>소리 내어 말하기</b> — MacLeod, Gopie, Hourihan, Neary &amp; Ozubko (2010). The production effect. <i>Journal of Experimental Psychology: Learning, Memory, and Cognition, 36</i>(3), 671–685.</li>
-    <li><b>같은 답을 점점 짧은 시간에</b> — Nation (1989). Improving speaking fluency. <i>System, 17</i>(3), 377–384.</li>
-    <li><b>질문을 실전처럼 바꿔 듣기</b> — Morris, Bransford &amp; Franks (1977). Levels of processing versus transfer appropriate processing. <i>Journal of Verbal Learning and Verbal Behavior, 16</i>(5), 519–533.</li>
+    <li><b>같은 답을 목표 시간 안에</b> — Nation (1989). Improving speaking fluency. <i>System, 17</i>(3), 377–384.</li>
+    <li><b>복습 때 질문을 실전처럼 바꿔 듣기</b> — Morris, Bransford &amp; Franks (1977). Levels of processing versus transfer appropriate processing. <i>Journal of Verbal Learning and Verbal Behavior, 16</i>(5), 519–533.</li>
     </ul></details></div>`;
-  $('#b1').onclick=()=>run(sess.flatMap(q=>ladder(q)));
-  $('#b2').onclick=()=>{const[a,b]=Q,intro={...a,t:'자기소개',qk:'자기소개를 해 주세요.',s:[...a.s,...b.s]}; // 실전에선 자기소개를 한 번에
-    const rest=Q.filter(q=>!q.only&&q!==a&&q!==b).map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([intro,...rest].flatMap(q=>whole(q,true)))};
-  $('#b3').onclick=()=>run(listenAll());
-  $('#b0').onclick=()=>run(focus());
+  $('#b1').onclick=n.go;
+  $('#b2').onclick=()=>{const L=Q.filter(lv);run(mock(L.length?L:Q))};
   $('#b4').onclick=script;
-  $('#b5').onclick=()=>run(askPlay());
-  app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
+  app.querySelectorAll('.item').forEach(b=>b.onclick=()=>learnOne(Q.find(q=>q.id===b.dataset.id)));
   $('#rate').oninput=e=>{S._rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
   $('#pad').oninput=e=>{S._pad=e.target.value;save();$('#pv').textContent=e.target.value+'배'};
   $('#vad').onchange=e=>{S._vad=e.target.checked;save()};
   $('#mic').onclick=()=>micTest($('#micout'));
   $('#rec').onchange=e=>{S._rec=e.target.checked;save()};
 }
-// 전체 원고: 질문(영·한)·변형 질문·답 문장. 문장을 누르면 읽어 줌
+// 전체 원고: 면접 흐름 순서. 문장을 누르면 그 문장만, ▶ 전체 듣기는 마지막에 누른 곳부터 끝까지 이어서 읽음
 function script(){
-  halt();scrollTo(0,0);
-  app.innerHTML=`<div class="top"><button id="back">← 처음으로</button><b style="flex:1">전체 원고</b><label class="set" style="margin:0"><input id="ko" type="checkbox" checked> 한글</label></div>
-    <nav class="toc">${Q.map(q=>`<a href="#s-${q.id}">${q.t}</a>`).join('')}</nav>
-    ${Q.map(q=>`<section class="sc" id="s-${q.id}"><h3>${q.t}</h3><p class="qq" data-say="${q.q}">Q. ${q.q}<small>${q.qk}</small></p>
-      ${q.v?`<p class="vv">비슷한 질문: ${q.v.join(' · ')}</p>`:''}
+  halt();scrollTo(0,0);let chain=0,from=0;
+  app.innerHTML=`<div class="top"><button id="back">←</button><b style="flex:1">전체 원고</b><button id="all">▶ 전체 듣기</button><label class="set" style="margin:0"><input id="ko" type="checkbox" checked> 한글</label></div>
+    <nav class="toc">${Q.map((q,i)=>`<a href="#s-${q.id}">${i+1}. ${q.t}</a>`).join('')}</nav>
+    ${Q.map((q,i)=>`<section class="sc" id="s-${q.id}"><h3>${i+1}. ${q.t}</h3><p class="qq" data-say="${q.q}">Q. ${q.q}<small>${q.qk}</small></p>
+      ${q.v?`<p class="vv">비슷한 질문: ${q.v.join(' · ')}</p>`:''}${q.id==='survive'?'<p class="vv">(괄호) = 이 말을 쓰는 상황</p>':''}
       ${q.s.map(([en,ko],k)=>`<p class="ss" data-say="${clean(en).replace(/"/g,'&quot;')}">${en.split(' / ').join(' <span class="sl">/</span> ')}<small>${ko}</small></p>`
         +(q.id==='ask'&&k%2===0?`<p class="pa" data-say="${ASK[k/2].a}">👨‍🏫 ${ASK[k/2].a}<small>${ASK[k/2].ak} (예상 답변)</small></p>`:'')).join('')}</section>`).join('')}
     <button class="go" id="back2">← 처음으로</button>`;
-  $('#back').onclick=$('#back2').onclick=()=>{halt();app.classList.remove('noko');home();scrollTo(0,0)};
+  const ps=[...app.querySelectorAll('[data-say]')],btn=$('#all');
+  const stop=()=>{chain=0;halt();btn.textContent='▶ 전체 듣기';app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'))};
+  const read=i=>{app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'));const p=ps[i];if(!p){from=0;return stop()}from=i;
+    p.classList.add('on');chain&&p.scrollIntoView({block:'center',behavior:'smooth'});say(p.dataset.say,()=>{p.classList.remove('on');chain&&read(i+1)})};
+  btn.onclick=()=>chain?stop():(chain=1,btn.textContent='⏹ 멈춤',read(from));
+  ps.forEach((p,i)=>p.onclick=()=>{chain=0;btn.textContent='▶ 전체 듣기';read(i)});
+  $('#back').onclick=$('#back2').onclick=()=>{stop();app.classList.remove('noko');home();scrollTo(0,0)};
   $('#ko').onchange=e=>app.classList.toggle('noko',!e.target.checked);
-  app.querySelectorAll('[data-say]').forEach(p=>p.onclick=()=>{app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'));p.classList.add('on');say(p.dataset.say,()=>p.classList.remove('on'))});
 }
 home();
 </script>
