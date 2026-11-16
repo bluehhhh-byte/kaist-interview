@@ -57,6 +57,7 @@ audio{width:100%;height:40px}
 .sc p{margin:0;padding:8px 6px;border-radius:8px;cursor:pointer}.sc p.on{background:var(--me)}
 .sc small{display:block;color:var(--mut);font-size:14px}
 .qq{font-weight:650;color:var(--acc)}.vv{font-size:13px;color:var(--mut);cursor:default!important}
+.lines{font-size:16px;line-height:1.55;display:grid;gap:4px}.lines .hint{font-size:16px;letter-spacing:0}.lines .dim{opacity:.45}
 .ss{font-size:18px;line-height:1.4}.pa{font-size:15px;color:var(--mut);border-left:3px solid var(--line);margin-left:6px!important}.sl{color:var(--line)}
 .noko .sc small{display:none}
 </style>
@@ -68,6 +69,24 @@ audio{width:100%;height:40px}
 // v: 같은 답으로 이어지는 다른 질문 표현 (면접관은 외운 문장 그대로 묻지 않음)
 // s: [영어, 한글]. " / " = 끊어 읽는 자리(한 호흡). 한 문장은 짧게, 같은 문장틀을 여러 답에서 다시 씀.
 const DAYS=['11/14 (토)','11/15 (일)','11/16 (월)','11/17 (화)'];
+// 자기소개 (사용자가 직접 쓴 원고, 2026-11-16). " / "만 끊어 읽기용으로 넣음
+const INTRO=[
+ ['Hello. / My name is Park Junseong.','안녕하세요. 박준성입니다.'],
+ ['It\'s nice to meet you.','만나서 반갑습니다.'],
+ ['I work on AI policy / for Gimhae City.','김해시에서 AI 정책 일을 합니다.'],
+ ['I studied economics / and urban regeneration.','경제학과 도시재생학을 공부했습니다.'],
+ ['I\'m especially interested in AX.','특히 AX에 관심이 많습니다.'],
+ ['For me, AX means / using AI / to improve traditional industries.','제게 AX는 AI로 전통 산업을 개선하는 것입니다.'],
+ ['These days, / I\'m working with Ulsan / on a power semiconductor project.','요즘 울산과 전력반도체 사업을 함께하고 있습니다.'],
+ ['I believe / power semiconductors are important / for AI data centers, physical AI, / cars, and ships.','전력반도체는 AI 데이터센터, 피지컬 AI, 자동차, 선박에 중요하다고 생각합니다.'],
+ ['In my work, / I bring together universities, research centers, and companies.','일하면서 대학, 연구소, 기업을 한데 모읍니다.'],
+ ['I also recently discussed / a research project / with the APEC Climate Center.','최근 APEC 기후센터와 연구 과제도 논의했습니다.'],
+ ['I have one important question.','중요한 질문이 하나 있습니다.'],
+ ['How can new technology / make people\'s lives better?','새 기술은 어떻게 사람들의 삶을 낫게 할 수 있을까요?'],
+ ['That\'s why / I want to study at KAIST.','그래서 KAIST에서 공부하고 싶습니다.'],
+ ['Thank you.','감사합니다.']];
+// 뜻 덩어리(블록): [끝 문장 번호(미포함), 이름]. 집중 연습은 블록을 하나씩 쌓아 올림
+const BLK=[[2,'인사'],[4,'나는 누구'],[6,'AX'],[9,'울산·전력반도체'],[10,'APEC 기후센터'],[14,'질문과 마무리']];
 // 교수에게 묻기: 면접 끝 "질문 있습니까?" 때 쓸 질문 3개. a = 예상 교수 답변(지어낸 예시, 듣기 연습용), re = 그 뒤 내 반응
 const ASK=[
  {en:'Can I work with climate / or energy researchers here?',ko:'여기서 기후·에너지 연구자들과 함께 연구할 수 있나요?',
@@ -80,24 +99,9 @@ const ASK=[
   a:'Yes, that is possible. But first, you should make a clear research plan with your advisor.',ak:'네, 가능합니다. 다만 먼저 지도교수와 명확한 연구계획을 세우세요.',
   re:'I am even more excited now. / Thank you.',rk:'지금 더 기대가 됩니다. 감사합니다.'}];
 const Q=[
-// 자기소개는 13문장이라 한 번에 외우기 길어서 앞·뒤 둘로 나눔. 모의면접에서는 합쳐서 한 번에 답함
-{id:'intro',day:0,t:'자기소개 ① 앞부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (앞부분)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
- ['Hello. / My name is Park Junseong.','안녕하세요. 박준성입니다.'],
- ['I am happy / to be here today.','오늘 이 자리에 오게 되어 기쁩니다.'],
- ['I work on AI policy / at Gimhae City.','김해시에서 AI 정책 일을 합니다.'],
- ['I studied economics / and urban regeneration.','경제학과 도시재생학을 공부했습니다.'],
- ['My main interest is AX.','제 주된 관심은 AX입니다.'],
- ['AX means using AI / to change old industries.','AX는 AI로 기존 산업을 바꾸는 것입니다.'],
- ['These days, / I work on a power semiconductor project / with Ulsan.','요즘은 울산과 전력반도체 사업을 추진하고 있습니다.']]},
-{id:'intro2',day:0,t:'자기소개 ② 뒷부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (뒷부분: "울산과 전력반도체 사업" 다음부터)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:[
- ['Power semiconductors are the key / to AI data centers / and physical AI.','전력반도체는 AI 데이터센터와 피지컬 AI의 핵심입니다.'],
- ['They also help / cars and ships.','자동차와 조선에도 도움이 됩니다.'],
- ['So I connect / universities, labs, and companies.','그래서 대학, 연구소, 기업을 연결합니다.'],
- ['Recently, / I discussed joint research / with the APEC Climate Center.','최근 APEC 기후센터와 공동연구를 논의했습니다.'],
- ['I have one big question.','저에게는 큰 질문이 하나 있습니다.'],
- ['How can new technology / make people\'s lives better?','새 기술이 어떻게 사람들의 삶을 낫게 할 수 있을까?'],
- ['That is why / I want to study at KAIST.','그래서 KAIST에서 공부하고 싶습니다.'],
- ['Thank you.','감사합니다.']]},
+// 자기소개는 질문 목록에선 앞·뒤 둘로 나누고, 모의면접과 ⭐ 집중 연습에선 합쳐서 한 번에 답함
+{id:'intro',day:0,t:'자기소개 ① 앞부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (앞부분)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:INTRO.slice(0,7)},
+{id:'intro2',day:0,t:'자기소개 ② 뒷부분',q:'Please introduce yourself.',qk:'자기소개를 해 주세요. (뒷부분: "울산과 전력반도체" 다음부터)',v:["Tell us about yourself.", "Could you briefly introduce yourself?", "Who are you, and what do you do?"],s:INTRO.slice(7)},
 {id:'why',day:0,t:'지원 동기',q:'Why did you apply to the Graduate School of Future Strategy?',qk:'왜 미래전략대학원에 지원했습니까?',v:["Why KAIST?", "Why did you choose this program?", "What brought you to this school?"],s:[
  ['I learned one thing / from my work.','일하면서 한 가지를 배웠습니다.'],
  ['Technology, industry, and cities / are all connected.','기술, 산업, 도시는 모두 연결되어 있습니다.'],
@@ -287,8 +291,8 @@ function micOff(){vad&&vad.st.getTracks().forEach(t=>t.stop());vad=null}
 // 소음의 3배 넘는 소리가 0.3초 넘게 난 뒤 1.2초 조용하면 "다 말함"
 function vadTick(st,v,now){st.floor=v<st.floor?v:st.floor*.998+v*.002;
   if(v>Math.max(.015,st.floor*3)){st.spoke=st.spoke||now;st.quiet=now}
-  return st.spoke&&st.quiet-st.spoke>300&&now-st.quiet>1200?1:0}
-function hear(go){if(!vad)return;const st={floor:.01,spoke:0,quiet:0};
+  return st.spoke&&st.quiet-st.spoke>300&&now-st.quiet>(st.need||1200)?1:0}
+function hear(go,need){if(!vad)return;const st={floor:.01,spoke:0,quiet:0,need}; // need: 끝으로 볼 침묵(ms). 긴 암송은 생각할 틈을 줘야 해서 길게
   const f=()=>{vad.an.getFloatTimeDomainData(vad.buf);let s=0;for(const x of vad.buf)s+=x*x;const v=Math.sqrt(s/vad.buf.length),b=$('#lv');
     b&&(b.style.width=Math.min(100,v*400)+'%');if(vadTick(st,v,Date.now()))return go();if(st.spoke)heard=true;lr=requestAnimationFrame(f)};f()}
 let ptok=0;
@@ -333,7 +337,7 @@ function play(s,stage,next){ // 한 단계: 보여 주고 → 읽어 주고 → 
     const go=()=>{if(k!==ptok)return;ptok++;cancelAnimationFrame(lr);clearTimeout(lt);stage.onclick=null;next()};
     stage.className='me';stage.onclick=go;heard=vad?false:null;
     stage.insertAdjacentHTML('beforeend',`<div class="you">🗣 지금 말하세요<small>${vad?'말이 끝나면 자동으로 넘어감':vadOn()&&vadErr?'🎙 '+vadErr:'다 말했으면 화면 탭'}</small></div>${vad?'<div class="mic"><i id="lv"></i></div>':''}<div class="gbar"><i style="animation-duration:${ms}ms"></i></div>`);
-    later(go,ms);hear(go)};
+    later(go,ms);hear(go,s.quiet)};
   if(s.say){stage.insertAdjacentHTML('afterbegin','<div class="who">👂 듣기</div>');say(s.say,()=>{const w=stage.querySelector('.who');w&&w.remove();gap()},s.vary)}else gap();
 }
 function mv(d){P.paused=false;$('#pp').textContent='⏸';if(P.sub)return P.sub(d);P.i=Math.min(P.steps.length-1,Math.max(0,P.i+d));show()}
@@ -413,6 +417,28 @@ const est=q=>((lv(q)<1||q.only&&lv(q)<2
   ?q.s.reduce((a,[en])=>{const cs=en.split(' / '),f=clean(en);return a+(cs.length>1?cs.reduce((b,c)=>b+stepT(c),0):0)+stepT(f)+NEED*recallT(f)},0)
   :lv(q)<2||q.only?q.s.reduce((a,[en])=>a+recallT(clean(en)),0):0)
   +(q.only?0:(w=>w/PACE[lv(q)]*60+tts(q.q)+25)(words(clean(q.s.map(x=>x[0]).join(' '))))))/60;
+// ⭐ 자기소개 집중 연습 — 긴 글을 통째로 외우는 순서
+//  1) 뼈대 지도: 블록 이름과 문장 첫마디를 먼저 봄
+//  2) 블록 쌓기(누적 반복): 새 블록 문장을 듣고 따라 한 뒤, 매번 "처음부터 여기까지" 안 보고 말함
+//     이미 외운 앞 블록은 힌트를 줄이고(덩이 첫 단어), 새 블록만 첫 글자 힌트
+//  3) 통째로: 덩이 첫 단어 힌트 → 한글만 → 질문만 듣고 실전처럼(시간·자기 판정)
+const FOCUS={id:'intro',t:'자기소개',q:'Please introduce yourself.',qk:'자기소개를 해 주세요.',s:INTRO};
+// 예상 시간(분): 읽어 주는 시간 + 따라 하기 + 암송(말 끝 감지로 보통 최대 시간보다 일찍 끝남) + 실전 1분
+const focusMin=()=>focus().reduce((a,s)=>a+(s.say?tts(s.say):0)+(s.gap===true?tts(s.say)*1.5*pad()+1:s.gap?s.gap/1000:0)+(s.rest||0)/1000,0)/60+1;
+const recite=n=>(words(clean(INTRO.slice(0,n).map(x=>x[0]).join(' ')))*550+1800*n)/rate();
+const lines=(n,lvOf)=>`<div class="lines">${INTRO.slice(0,n).map(([en,ko],k)=>lvOf(k)>=2?`<div>${ko}</div>`:`<div>${cue(en,lvOf(k))}</div>`).join('')}</div>`;
+const full=(n,from=0)=>`<div class="lines">${INTRO.slice(0,n).map(([en],k)=>`<div${k<from?' class="dim"':''}>${clean(en)}</div>`).join('')}</div>`;
+function focus(){const tag=t=>'⭐ 자기소개 집중 · '+t;let a=0;return[
+  {tag:tag('뼈대 지도'),rest:9000,html:`<div class="who">🗺 순서만 먼저 머리에 넣으세요</div><div class="lines">${BLK.map(([e,name],b)=>{const s=b?BLK[b-1][0]:0;
+    return`<div><b>${b+1}. ${name}</b> — ${INTRO.slice(s,e).map(x=>clean(x[0]).split(' ').slice(0,2).join(' ')+'…').join(' ')}</div>`}).join('')}</div>`},
+  ...BLK.flatMap(([e,name],b)=>{const s=a;a=e;const t=tag(`${b+1}/${BLK.length} ${name}`);return[
+    ...INTRO.slice(s,e).flatMap((_,j)=>echo1(FOCUS,s+j,t)),
+    {tag:t+' · 처음부터 여기까지',gap:recite(e),quiet:3000,html:`<div class="who">🔁 처음부터 "${name}"까지 안 보고 말하기</div>`+lines(e,k=>k<s?1:0)},
+    {tag:t+' · 확인',say:clean(INTRO.slice(0,e).map(x=>x[0]).join(' ')),rest:800,html:full(e,s)}]}),
+  {tag:tag('통째로 ① 첫 단어 힌트'),gap:recite(14),quiet:3000,html:'<div class="who">🔁 처음부터 끝까지</div>'+lines(14,()=>1)},
+  {tag:tag('통째로 ① 확인'),say:clean(INTRO.map(x=>x[0]).join(' ')),rest:800,html:full(14)},
+  {tag:tag('통째로 ② 한글만'),gap:recite(14),quiet:3000,html:'<div class="who">🔁 한글만 보고 처음부터 끝까지</div>'+lines(14,()=>2)},
+  ...whole(FOCUS,false).map(x=>({...x,tag:tag('통째로 ③ 실전')}))]}
 // 교수에게 묻기 역할극: 면접관이 "질문 있나요?" → 내가 묻기 → 모범 질문 → 교수 답변(다른 목소리) → 내 반응
 const askPlay=()=>ASK.flatMap((x,i)=>{const tag=`교수에게 묻기 ${i+1}/${ASK.length}`,t=y=>(words(clean(y))*550+1800)/rate();return[
   {tag,say:i?'Do you have any other questions?':'Do you have any questions for us?',vary:true,rest:300,html:`<div class="big">🙋</div><div class="ko" style="text-align:center">면접관: ${i?'다른 질문 있습니까?':'질문 있습니까?'}</div>`},
@@ -431,7 +457,7 @@ console.assert(drill(Q[1]).length===1&&ladder(Q[1]).length===3,'ladder: 문장 �
 for(const s0 of[300,0]){const st={floor:.01,spoke:0,quiet:0},v=t=>t>=s0&&t<s0+700?.1:.005;let end=0; // (소음 →) 0.7초 말함 → 조용
  for(let t=0;t<4000&&!end;t+=16)end=vadTick(st,v(t),t)&&t;console.assert(end>s0+1900&&end<s0+2000,'vadTick: 말 끝나고 1.2초 뒤 넘김',s0,end)}
 console.assert(askPlay().length===18&&Q.find(q=>q.id==='ask').s.length===6,'교수에게 묻기: 3개 × 6단계, 문장 6');
-console.assert(Q[0].s.length+Q[1].s.length===15&&Q[1].id==='intro2','자기소개 6+7로 나눔');
+console.assert(Q[0].s.length+Q[1].s.length===14&&INTRO.length===BLK[BLK.length-1][0]&&Q[1].id==='intro2','자기소개 6+7로 나눔');
 console.assert(est(Q[1])>5&&est(Q[1])<20,'est: 자기소개 뒷부분 5~20분');
 console.assert(Q.every(q=>q.s.every(x=>x[0].split(' / ').every(c=>words(c)<=8))),'한 덩이 8단어 이하');
 
@@ -442,7 +468,8 @@ function home(){
   const d=Math.ceil((new Date('2026-11-18T00:00:00+09:00')-Date.now())/864e5);
   const done=Q.filter(q=>lv(q)>=3).length;
   app.innerHTML=`<h1>KAIST 영어 면접 <span class="chip">${d>0?'D-'+d:d===0?'당일':'종료'}</span><span class="chip">완성 ${done}/${Q.length}</span></h1>
-    <button class="go p" id="b1"><b>▶ 오늘 훈련 시작</b><small>누르면 끝까지 알아서 진행 · 약 ${Math.round(sess.reduce((a,q)=>a+est(q),0))}분 · ${sess.map(q=>q.t).join(', ')}</small></button>
+    <button class="go p" id="b0"><b>⭐ 자기소개 집중 연습</b><small>뼈대 → 블록 6개 쌓기 → 통째로 3번 · 약 ${Math.round(focusMin())}분 · 하루 2~3번</small></button>
+    <button class="go" id="b1"><b>▶ 오늘 훈련 시작</b><small>누르면 끝까지 알아서 진행 · 약 ${Math.round(sess.reduce((a,q)=>a+est(q),0))}분 · ${sess.map(q=>q.t).join(', ')}</small></button>
     <button class="go" id="b2"><b>🎤 실전 모의면접</b><small>질문 5개를 소리로만 듣고 답하기</small></button>
     <button class="go" id="b3"><b>🎧 듣기만</b><small>전체 질문과 답을 차례로 들려줌 (이동 중에)</small></button>
     <button class="go" id="b5"><b>🙋 교수에게 묻기</b><small>면접 끝 "질문 있습니까?" 연습 · 질문 3개 → 교수 답변 듣기 → 내 반응</small></button>
@@ -469,6 +496,7 @@ function home(){
   $('#b2').onclick=()=>{const[a,b]=Q,intro={...a,t:'자기소개',qk:'자기소개를 해 주세요.',s:[...a.s,...b.s]}; // 실전에선 자기소개를 한 번에
     const rest=Q.filter(q=>!q.only&&q!==a&&q!==b).map(q=>[lv(q)+Math.random()*1.5,q]).sort((a,b)=>a[0]-b[0]).slice(0,4).map(x=>x[1]);run([intro,...rest].flatMap(q=>whole(q,true)))};
   $('#b3').onclick=()=>run(listenAll());
+  $('#b0').onclick=()=>run(focus());
   $('#b4').onclick=script;
   $('#b5').onclick=()=>run(askPlay());
   app.querySelectorAll('.item').forEach(b=>b.onclick=()=>run(ladder(Q.find(q=>q.id===b.dataset.id),true)));
