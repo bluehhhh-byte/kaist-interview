@@ -20,6 +20,9 @@ h1{font-size:19px;margin:4px 0 10px}
 .top{display:flex;align-items:center;gap:10px}.top button{padding:6px 12px}
 #tag{flex:1;font-size:13px;color:var(--mut)}
 #stage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:18px 14px;margin:10px 0;border-radius:18px;border:1px solid var(--line);background:var(--card);min-height:320px}
+#stage.me{background:var(--me);border-color:var(--ok)}
+.mic{height:6px;border-radius:9px;background:#fff1;overflow:hidden}.mic i{display:block;height:100%;width:0;background:var(--ok);transition:width .08s}
+.ls .cur{color:var(--ok);font-weight:600}.ls .dim{opacity:.4}
 #stage.ans{background:var(--me);border-color:var(--ok)}
 .qk{color:var(--acc);font-weight:600}
 .ko{color:var(--mut);font-size:15px}
@@ -69,94 +72,112 @@ const Q=[
  ['And do local people benefit?','그리고 지역 주민이 혜택을 받는가?'], // 원고 "do that local people" → that 빼야 문법이 맞음
  ['My goal is to make a future guide for choosing best locations.','목표는 최적의 입지를 고르는 미래 가이드를 만드는 것입니다.']]}];
 
-// ───────── 상태·읽어주기 ─────────
+// ───────── 상태 ─────────
 const $=s=>document.querySelector(s),app=$('#app');
 const S=JSON.parse(localStorage.kaistFinal||'{}'),save=()=>localStorage.kaistFinal=JSON.stringify(S);
-const rate=()=>+S.rate||0.8;
 const scope=()=>S.scope==null?-1:S.scope; // -1 = 세 질문 전부
+const qis=()=>scope()<0?[0,1,2]:[scope()];
 const shuffle=a=>a.map(x=>[Math.random(),x]).sort((p,r)=>p[0]-r[0]).map(x=>x[1]);
-function say(text,onend){speechSynthesis.cancel();
-  const vs=speechSynthesis.getVoices().filter(v=>/^en.US/.test(v.lang.replace('_','-')));
-  const u=new SpeechSynthesisUtterance(text.replace(/—/g,','));u.lang='en-US';u.rate=rate();
-  const v=vs.find(v=>/Google|Natural|Samantha|Aria|Jenny/.test(v.name))||vs[0];if(v)u.voice=v;
-  u.onend=onend||null;speechSynthesis.speak(u)}
-speechSynthesis.getVoices();
-const all=q=>q.s.map(x=>x[0]).join(' ');
-
-// ───────── 카드 만들기 ─────────
-// 앞 n단어만 보이고 나머지는 글자 수만큼 점
-const showN=(en,n)=>en.split(' ').map((w,i)=>i<n?w:`<span class="m">${w.replace(/[A-Za-z]/g,'·')}</span>`).join(' ');
-const ansAll=q=>`<div class="qk">Q. ${q.q}</div><div class="ls">${q.s.map(([en,ko])=>`<div>${en}<small>${ko}</small></div>`).join('')}</div>`;
+const sp=()=>S.slow?'s':'n'; // 녹음 속도: n 보통, s 느리게 (tools/build_audio.py로 만든 원어민 음성)
+let CUE=null;fetch('audio/cues.json?v=2').then(r=>r.json()).then(j=>CUE=j); // 단어마다 시작 시각 → 앞 n단어만 재생
+const W=en=>en.split(' ').filter(w=>w!=='—');
+const showN=(en,n)=>{let i=0;return en.split(' ').map(w=>w==='—'||i++<n?w:`<span class="m">${w.replace(/[A-Za-z]/g,'·')}</span>`).join(' ')};
 const ans1=([en,ko])=>`<div class="en">${en}</div><div class="ko">${ko}</div>`;
-const M={
- listen:{t:'🎧 듣고 따라 하기',d:'한 문장씩 듣고 그대로 따라 말하기 (처음 1번)',one:1,sent:1,
-   p:(q,x)=>({html:`<div class="ko">${q.t} · 듣고 따라 말하세요</div>`+ans1(x),say:x[0]})},
- half:{t:'✂️ 문장 절반 보고 말하기',d:'앞 절반만 보고 문장 전체 말하기',sent:1,
-   p:(q,[en,ko])=>({html:`<div class="ko">${q.t} · ${ko}</div><div class="en">${showN(en,Math.ceil(en.split(' ').length/2))}</div>`,a:ans1([en,ko]),say2:en})},
- first:{t:'1️⃣ 첫 단어만 보고 말하기',d:'첫 단어와 한글 뜻만 보고 문장 전체 말하기',sent:1,
-   p:(q,[en,ko])=>({html:`<div class="ko">${q.t} · ${ko}</div><div class="en">${showN(en,1)}</div>`,a:ans1([en,ko]),say2:en})},
- two:{t:'✌️ 앞 두 단어 → 답변 전체',d:'문장마다 앞 두 단어만 보고 답변을 처음부터 끝까지',
-   p:q=>({html:`<div class="qk">Q. ${q.q}</div><div class="ls">${q.s.map(([en])=>`<div>${showN(en,2)}</div>`).join('')}</div>`,a:ansAll(q),say2:all(q)})},
- q:{t:'❓ 질문 듣고 답변 (실전)',d:'질문만 듣고 아무 힌트 없이 답변 전체',
-   p:q=>({html:`<div class="big">🎤</div><div class="qk" style="text-align:center">${q.q}</div><div class="ko" style="text-align:center">${q.qk}</div><div style="text-align:center">⏱ <span class="timer" id="tm">0</span>초</div>`,say:q.q,timer:1,a:ansAll(q),say2:all(q)})}};
-const qs=()=>scope()<0?Q:[Q[scope()]];
-// 한 바퀴: 문장 모드는 순서대로(이어서 외우기), 답변 모드는 질문 순서를 섞음
-const round=k=>M[k].sent?qs().flatMap(q=>q.s.map(x=>({k,...M[k].p(q,x)}))):shuffle(qs()).map(q=>({k,...M[k].p(q),qi:Q.indexOf(q)}));
-// 섞어서 무한 반복: 어려운 쪽(답변 전체)을 더 자주
-const mixOne=()=>{const k=shuffle(['half','first','two','q','q','two'])[0],q=shuffle(qs())[0];
-  return M[k].sent?{k,...M[k].p(q,shuffle(q.s)[0])}:{k,...M[k].p(q),qi:Q.indexOf(q)}};
+const ansAll=qi=>`<div class="qk">Q. ${Q[qi].q}</div><div class="ls">${Q[qi].s.map(([en,ko])=>`<div>${en}<small>${ko}</small></div>`).join('')}</div>`;
 
-// ───────── 훈련 화면 ─────────
-let P=null,tm;
-function start(k){P={k,r:1,i:0,list:k==='mix'?[mixOne()]:round(k),ok:0};show()}
-function show(){clearInterval(tm);
-  if(P.i>=P.list.length){if(P.k==='mix')P.list.push(mixOne());else{P.r++;P.list=round(P.k);P.i=0}}
-  const c=P.list[P.i],name=P.k==='mix'?'🔀 섞어서 · '+M[c.k].t:M[P.k].t;
-  app.innerHTML=`<div class="top"><button onclick="home()">✕</button><span id="tag">${name} · ${P.k==='mix'?P.i+1+'장':P.r+'바퀴 '+(P.i+1)+'/'+P.list.length} · 😀 ${P.ok}</span></div>
-    <div id="stage">${c.html}</div><div class="ctl">${c.say?'<button id="re">🔊 다시</button>':''}<button class="pri" id="go">${c.a?'👉 말했으면 정답 보기':'▶ 따라 했음 · 다음'}</button></div>`;
-  if(c.say){say(c.say);$('#re').onclick=()=>say(c.say)}
-  if(c.timer){const t0=Date.now();tm=setInterval(()=>{const e=$('#tm');e&&(e.textContent=Math.floor((Date.now()-t0)/1000))},250)}
-  $('#go').onclick=c.a?()=>reveal(c):()=>{P.i++;show()};
+// ───────── 소리: 녹음 재생 + 말 끝 감지 ─────────
+// 동작 하나 = next=>{}. halt()가 tok를 바꾸면 진행 중이던 동작은 모두 멈춤
+const A=new Audio();let tok=0,raf,tmo,AC,an,buf,stream,micMsg='',wl;
+function halt(){tok++;cancelAnimationFrame(raf);clearTimeout(tmo);A.pause();A.onended=null}
+const seq=(acts,done)=>{const t=tok;let i=0;const go=()=>{if(t!==tok)return;i<acts.length?acts[i++](go):done()};go()};
+const wait=ms=>next=>{tmo=setTimeout(next,ms)};
+const view=h=>next=>{const e=$('#txt');e&&(e.innerHTML=h);next()};
+function status(s,me){const e=$('#st');if(!e)return;e.textContent=s;$('#stage').className=me?'me':''}
+// cut = 앞 cut단어만 재생하고 멈춤
+const play=(qi,k,cut)=>next=>{const t=tok,end=cut&&CUE&&CUE[sp()][qi+'-'+k][cut]||1e9;let done=0;
+  status('🔊 듣기');A.src=`audio/${sp()}/${qi}-${k}.mp3`;
+  const fin=()=>{if(done||t!==tok)return;done=1;cancelAnimationFrame(raf);A.pause();A.onended=null;next()};
+  A.onended=fin;A.play().catch(()=>{tmo=setTimeout(fin,1500)});
+  const chk=()=>{if(t!==tok)return;if(A.currentTime>=end-.04)return fin();raf=requestAnimationFrame(chk)};chk()};
+// 말 끝 감지: 마이크 소리 크기만 봄(음성은 기기 밖으로 안 나감). 말이 끝나고 2초 조용하면 다음.
+// 아예 말이 없으면 기다렸다가 넘어가고, 그 카드는 3장 뒤에 다시
+const listen=(sec,card)=>next=>{const t=tok,t0=Date.now();status('🗣 말하세요'+(micMsg?' · '+micMsg:''),1);
+  if(!an)return tmo=setTimeout(next,sec*1600+2000); // 마이크가 없으면 시간으로
+  let floor=.01,spoke=0,quiet=0;
+  const f=()=>{if(t!==tok)return;an.getFloatTimeDomainData(buf);let s=0;for(const x of buf)s+=x*x;const v=Math.sqrt(s/buf.length),now=Date.now(),b=$('#lv');
+    b&&(b.style.width=Math.min(100,v*400)+'%');
+    floor=v<floor?v:floor*.998+v*.002;
+    if(now-t0>300&&v>Math.max(.015,floor*3)){spoke=spoke||now;quiet=now} // 처음 0.3초는 스피커 잔향이라 무시
+    if(spoke&&quiet-spoke>300&&now-quiet>2000)return next();
+    if(now-t0>(spoke?sec*2500+4000:Math.max(6000,sec*1200+3000))){if(!spoke)card.miss=1;return next()}
+    raf=requestAnimationFrame(f)};f()};
+function micOn(){if(an)return Promise.resolve();
+  return navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}).then(st=>{stream=st;an=AC.createAnalyser();an.fftSize=1024;buf=new Float32Array(1024);AC.createMediaStreamSource(st).connect(an);micMsg=''})
+    .catch(e=>{micMsg=e.name==='NotAllowedError'?'마이크 막힘 → 시간으로 넘김':'마이크 없음 → 시간으로 넘김'})}
+function micOff(){stream&&stream.getTracks().forEach(t=>t.stop());stream=an=null}
+const sec=en=>W(en).length*.55+1; // 내가 말하는 데 걸릴 시간(초) 어림
+
+// ───────── 연습 방법 ─────────
+// sent: 문장 단위 카드, 그 외: 답변 단위 카드
+const twoV=(qi,j)=>`<div class="qk">Q. ${Q[qi].q}</div><div class="ls">${Q[qi].s.map(([en],m)=>`<div class="${m===j?'cur':m<j?'dim':''}">${showN(en,2)}</div>`).join('')}</div>`;
+const M={
+ book:{t:'📖 오디오북',d:'질문과 답변을 원어민 목소리로 계속 읽어 줌 · 듣기만',
+   c:({qi})=>[view(ansAll(qi)),play(qi,0),wait(800),...Q[qi].s.flatMap((_,j)=>[play(qi,j+1),wait(350)]),wait(1500)]},
+ listen:{t:'🎧 듣고 따라 하기',d:'한 문장 듣고 → 따라 말하기',sent:1,
+   c:c=>{const x=Q[c.qi].s[c.j];return[view(ans1(x)),play(c.qi,c.j+1),listen(sec(x[0]),c),wait(300)]}},
+ half:{t:'✂️ 문장 절반 듣고 말하기',d:'앞 절반만 들려줌 → 문장 전체 말하기 → 정답',sent:1,
+   c:c=>{const x=Q[c.qi].s[c.j],n=Math.ceil(W(x[0]).length/2);return[view(`<div class="ko">${x[1]}</div><div class="en">${showN(x[0],n)}</div>`),play(c.qi,c.j+1,n),listen(sec(x[0]),c),view(ans1(x)),play(c.qi,c.j+1),wait(700)]}},
+ first:{t:'1️⃣ 첫 단어만 듣고 말하기',d:'첫 단어만 들려줌 → 문장 전체 말하기 → 정답',sent:1,
+   c:c=>{const x=Q[c.qi].s[c.j];return[view(`<div class="ko">${x[1]}</div><div class="en">${showN(x[0],1)}</div>`),play(c.qi,c.j+1,1),listen(sec(x[0]),c),view(ans1(x)),play(c.qi,c.j+1),wait(700)]}},
+ two:{t:'✌️ 앞 두 단어 → 답변 전체',d:'질문 → 문장마다 앞 두 단어 듣고 이어 말하기 → 끝에 모범답안',
+   c:c=>[play(c.qi,0),...Q[c.qi].s.flatMap(([en],j)=>[view(twoV(c.qi,j)),play(c.qi,j+1,2),listen(sec(en),c)]),view(ansAll(c.qi)),wait(500),...Q[c.qi].s.flatMap((_,j)=>[play(c.qi,j+1),wait(300)]),wait(1000)]},
+ q:{t:'❓ 질문 듣고 답변 (실전)',d:'질문만 듣고 답변 전체 → 모범답안',
+   c:c=>[view(`<div class="big">🎤</div><div class="qk" style="text-align:center">${Q[c.qi].q}</div>`),play(c.qi,0),listen(Q[c.qi].s.reduce((a,[en])=>a+sec(en),0),c),view(ansAll(c.qi)),...Q[c.qi].s.flatMap((_,j)=>[play(c.qi,j+1),wait(300)]),wait(1000)]}};
+// 한 바퀴: 문장 카드는 순서대로(이어서 외우기), 답변 카드는 질문 순서를 섞음(오디오북은 순서대로)
+const deck=k=>M[k].sent?qis().flatMap(qi=>Q[qi].s.map((_,j)=>({k,qi,j}))):(k==='book'?qis():shuffle(qis())).map(qi=>({k,qi}));
+const mixOne=()=>{const k=shuffle(['half','first','two','q','q','two'])[0],qi=shuffle(qis())[0];return{k,qi,j:Math.random()*Q[qi].s.length|0}};
+
+// ───────── 훈련 화면: 터치 없이 끝없이 돌아감 ─────────
+let P=null;
+function start(k){halt();AC=AC||new AudioContext();AC.resume(); // 버튼 누른 순간에 소리·마이크를 열어야 아이폰에서 동작
+  A.src=`audio/${sp()}/0-0.mp3`;A.play().then(()=>A.pause()).catch(()=>{});
+  navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>wl=w).catch(()=>{});
+  P={k,n:0,list:[],cur:null,paused:0};
+  app.innerHTML=`<div class="top"><button id="x">✕</button><span id="tag">${k==='mix'?'🔀 섞어서':M[k].t}</span></div>
+    <div id="stage"><div id="st" class="ko"></div><div class="mic"><i id="lv"></i></div><div id="txt"></div></div>
+    <div class="ctl"><button id="pp">⏸ 멈춤</button><button id="sk">⏭ 다음</button></div>`;
+  $('#x').onclick=home;
+  $('#pp').onclick=()=>{P.paused=!P.paused;$('#pp').textContent=P.paused?'▶ 계속':'⏸ 멈춤';P.paused?(halt(),status('⏸ 멈춤')):runCard(P.cur)};
+  $('#sk').onclick=()=>{P.paused=0;$('#pp').textContent='⏸ 멈춤';nextCard()};
+  status('준비 중…');(k==='book'?Promise.resolve():micOn()).then(()=>P&&nextCard());
 }
-function reveal(c){clearInterval(tm);const sec=$('#tm')&&$('#tm').textContent;
-  $('#stage').className='ans';$('#stage').innerHTML=(sec?`<div class="ko">⏱ 내 답변 ${sec}초</div>`:'')+c.a;say(c.say2);
-  $('.ctl').innerHTML='<button id="re">🔊</button><button id="no">😵 다시</button><button class="okb pri" id="yes">😀 됐다</button>';
-  $('#re').onclick=()=>say(c.say2);
-  $('#no').onclick=()=>{P.list.splice(Math.min(P.i+3,P.list.length),0,c);P.i++;show()}; // 틀린 카드는 3장 뒤에 다시
-  $('#yes').onclick=()=>{P.ok++;if(c.k==='q'){S['ok'+c.qi]=(S['ok'+c.qi]||0)+1;save()}P.i++;show()};
-}
-// PC: 스페이스·엔터 = 파란 버튼, ← = 😵
-document.addEventListener('keydown',e=>{if(!P)return;const b=e.key==='ArrowLeft'?$('#no'):(e.key===' '||e.key==='Enter')?$('.pri'):null;if(b){e.preventDefault();b.click()}});
+function nextCard(){halt();if(!P.list.length)P.list=P.k==='mix'?[mixOne()]:deck(P.k);P.n++;runCard(P.list.shift())}
+function runCard(c){P.cur=c;c.miss=0;$('#tag').textContent=`${P.k==='mix'?'🔀 '+M[c.k].t:M[c.k].t} · ${Q[c.qi].t.slice(3)} · ${P.n}번째`;
+  seq(M[c.k].c(c),()=>{if(c.miss&&c.k!=='book')P.list.splice(2,0,{k:c.k,qi:c.qi,j:c.j});nextCard()})} // 말이 없던 카드는 3장 뒤에 다시
 
 // ───────── 첫 화면 ─────────
-function home(){P=null;clearInterval(tm);speechSynthesis.cancel();
-  const d=Math.ceil((new Date('2026-11-18T00:00:00+09:00')-Date.now())/864e5);
-  app.innerHTML=`<h1>KAIST 면접 최종 대본 ${d<=0?'· 오늘!':''}</h1>
-    <p class="tip">순서: ① → ② → ③ → ④ → ⑤ 한 바퀴씩, 그다음엔 ⑥만 계속. 반드시 <b>소리 내어</b> 말하고 정답을 보세요. 😵 누른 것은 3장 뒤에 다시 나옵니다.</p>
+function home(){halt();P=null;micOff();wl&&wl.release();
+  app.innerHTML=`<h1>KAIST 면접 최종 대본</h1>
+    <p class="tip">🚗 <b>터치 없이 자동</b>: 들려주면 따라 말하고, 말이 끝나고 2초 조용하면 다음으로 넘어갑니다. 아무 말이 없으면 잠시 기다렸다 넘어가고 그 문장은 3장 뒤에 다시 나옵니다. <b>출발 전에 눌러 두고, 운전 중엔 화면을 보지 마세요.</b></p>
     <div class="chips">${['전체',...Q.map(q=>q.t)].map((t,i)=>`<button data-s="${i-1}" class="${scope()===i-1?'on':''}">${t}</button>`).join('')}</div>
-    ${['listen','half','first','two','q'].map((k,i)=>`<button class="go" data-k="${k}"><b>${'①②③④⑤'[i]} ${M[k].t}</b><small>${M[k].d}</small></button>`).join('')}
+    <div class="chips"><button data-v="0" class="${S.slow?'':'on'}">보통 속도</button><button data-v="1" class="${S.slow?'on':''}">🐢 느리게</button></div>
+    ${['book','listen','half','first','two','q'].map((k,i)=>`<button class="go" data-k="${k}"><b>${'⓪①②③④⑤'[i]} ${M[k].t}</b><small>${M[k].d}</small></button>`).join('')}
     <button class="go p" data-k="mix"><b>⑥ 🔀 섞어서 무한 반복</b><small>절반·첫 단어·두 단어·실전 질문이 무작위로 · 면접 직전까지</small></button>
-    <p class="tip">실전 ⑤ 성공: ${Q.map((q,i)=>`${q.t.slice(3)} ${S['ok'+i]||0}회`).join(' · ')}</p>
-    <button class="go" id="sc"><b>📄 대본 보기·전체 듣기</b><small>문장을 누르면 읽어 줌 · 이동 중엔 이어 듣기</small></button>
-    <label class="set">읽는 속도 <input id="rate" type="range" min="0.6" max="1.1" step="0.05" value="${rate()}"><span id="rv">${rate()}배</span></label>`;
+    <button class="go" id="sc"><b>📄 대본 보기</b><small>문장을 누르면 원어민 녹음 재생</small></button>`;
   app.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S.scope=+b.dataset.s;save();home()});
+  app.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{S.slow=+b.dataset.v;save();home()});
   app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>start(b.dataset.k));
   $('#sc').onclick=script;
-  $('#rate').oninput=e=>{S.rate=e.target.value;save();$('#rv').textContent=e.target.value+'배'};
 }
-// 대본: 문장을 누르면 그 문장, ▶ 이어 듣기는 처음부터 끝까지 반복
-function script(){speechSynthesis.cancel();let chain=0;
-  app.innerHTML=`<div class="top"><button id="back">←</button><b style="flex:1">최종 대본</b><button id="all">▶ 이어 듣기</button></div>
-    ${Q.map(q=>`<div class="sc"><h3>${q.t}</h3><p data-say="${q.q}"><b>Q. ${q.q}</b><small>${q.qk}</small></p>${q.s.map(([en,ko])=>`<p data-say="${en.replace(/"/g,'&quot;')}">${en}<small>${ko}</small></p>`).join('')}</div>`).join('')}`;
-  const ps=[...app.querySelectorAll('[data-say]')],btn=$('#all');
-  const read=i=>{ps.forEach(x=>x.classList.remove('on'));const p=ps[i%ps.length];p.classList.add('on');chain&&p.scrollIntoView({block:'center',behavior:'smooth'});
-    say(p.dataset.say,()=>{p.classList.remove('on');chain&&read(i+1)})};
-  btn.onclick=()=>{chain=!chain;btn.textContent=chain?'⏹ 멈춤':'▶ 이어 듣기';chain?read(0):speechSynthesis.cancel()};
-  ps.forEach((p,i)=>p.onclick=()=>{chain=0;btn.textContent='▶ 이어 듣기';read(i)});
+function script(){halt();
+  app.innerHTML=`<div class="top"><button id="back">←</button><b style="flex:1">최종 대본</b></div>
+    ${Q.map((q,qi)=>`<div class="sc"><h3>${q.t}</h3><p data-c="${qi}-0"><b>Q. ${q.q}</b><small>${q.qk}</small></p>${q.s.map(([en,ko],j)=>`<p data-c="${qi}-${j+1}">${en}<small>${ko}</small></p>`).join('')}</div>`).join('')}`;
+  app.querySelectorAll('[data-c]').forEach(p=>p.onclick=()=>{halt();app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'));p.classList.add('on');
+    const[qi,k]=p.dataset.c.split('-');play(qi,k)(()=>p.classList.remove('on'))});
   $('#back').onclick=home;
 }
-console.assert(showN('I am ok.',1)==='I <span class="m">··</span> <span class="m">··.</span>','showN');
-console.assert(round('half').length===24&&round('q').length===3,'한 바퀴: 문장 24개, 질문 3개');
+console.assert(showN('I am ok.',1)==='I <span class="m">··</span> <span class="m">··.</span>'&&showN('a — b c',2).startsWith('a — b '),'showN: — 은 단어로 안 셈');
+console.assert(deck('half').length===(scope()<0?24:Q[scope()].s.length)&&M.two.c({qi:0}).length===1+10*3+2+20+1,'카드 구성');
 home();
 </script>
 </body>
