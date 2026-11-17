@@ -49,7 +49,7 @@ const Q=[
  ['Nice to meet you.','만나서 반갑습니다.'],
  ['I work on AI policy and strategy for Gimhae City.','김해시에서 AI 정책과 전략 일을 합니다.'],
  ['I studied economics and urban regeneration.','경제학과 도시재생학을 공부했습니다.'],
- ['I\'m very interested in AX.','AX에 관심이 많습니다.'],
+ ['Recently, I\'m very interested in AX.','요즘 AX에 관심이 많습니다.'],
  ['For me, AX means using AI to improve traditional industries and cities.','제게 AX는 AI로 전통 산업과 도시를 개선하는 것입니다.'],
  ['I came here from Gimhae today, I\'m ready to learn.','오늘 김해에서 왔고, 배울 준비가 되어 있습니다.'],
  ['I still have a lot to learn, and I\'m really excited about this opportunity.','아직 배울 게 많고, 이번 기회가 정말 설렙니다.'],
@@ -79,7 +79,7 @@ const scope=()=>S.scope==null?-1:S.scope; // -1 = 세 질문 전부
 const qis=()=>scope()<0?[0,1,2]:[scope()];
 const shuffle=a=>a.map(x=>[Math.random(),x]).sort((p,r)=>p[0]-r[0]).map(x=>x[1]);
 const sp=()=>S.slow?'s':'n'; // 녹음 속도: n 보통, s 느리게 (tools/build_audio.py로 만든 원어민 음성)
-let CUE=null;fetch('audio/cues.json?v=2').then(r=>r.json()).then(j=>CUE=j); // 단어마다 시작 시각 → 앞 n단어만 재생
+let CUE=null;fetch('audio/cues.json?v=3').then(r=>r.json()).then(j=>CUE=j); // 단어마다 시작 시각 → 앞 n단어만 재생
 const W=en=>en.split(' ').filter(w=>w!=='—');
 const showN=(en,n)=>{let i=0;return en.split(' ').map(w=>w==='—'||i++<n?w:`<span class="m">${w.replace(/[A-Za-z]/g,'·')}</span>`).join(' ')};
 const ans1=([en,ko])=>`<div class="en">${en}</div><div class="ko">${ko}</div>`;
@@ -95,7 +95,7 @@ const view=h=>next=>{const e=$('#txt');e&&(e.innerHTML=h);next()};
 function status(s,me){const e=$('#st');if(!e)return;e.textContent=s;$('#stage').className=me?'me':''}
 // cut = 앞 cut단어만 재생하고 멈춤
 const play=(qi,k,cut)=>next=>{const t=tok,end=cut&&CUE&&CUE[sp()][qi+'-'+k][cut]||1e9;let done=0;
-  status('🔊 듣기');A.src=`audio/${sp()}/${qi}-${k}.mp3`;
+  status('🔊 듣기');A.src=`audio/${sp()}/${qi}-${k}.mp3?v=3`; // v: 다시 녹음하면 올려야 옛 녹음 캐시를 안 씀
   const fin=()=>{if(done||t!==tok)return;done=1;cancelAnimationFrame(raf);A.pause();A.onended=null;next()};
   A.onended=fin;A.play().catch(()=>{tmo=setTimeout(fin,1500)});
   const chk=()=>{if(t!==tok)return;if(A.currentTime>=end-.04)return fin();raf=requestAnimationFrame(chk)};chk()};
@@ -170,10 +170,15 @@ function home(){halt();P=null;micOff();wl&&wl.release();
   $('#sc').onclick=script;
 }
 function script(){halt();
-  app.innerHTML=`<div class="top"><button id="back">←</button><b style="flex:1">최종 대본</b></div>
+  app.innerHTML=`<div class="top"><button id="back">←</button><b style="flex:1">최종 대본</b><button id="all">▶ 전체 듣기</button></div>
     ${Q.map((q,qi)=>`<div class="sc"><h3>${q.t}</h3><p data-c="${qi}-0"><b>Q. ${q.q}</b><small>${q.qk}</small></p>${q.s.map(([en,ko],j)=>`<p data-c="${qi}-${j+1}">${en}<small>${ko}</small></p>`).join('')}</div>`).join('')}`;
-  app.querySelectorAll('[data-c]').forEach(p=>p.onclick=()=>{halt();app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'));p.classList.add('on');
-    const[qi,k]=p.dataset.c.split('-');play(qi,k)(()=>p.classList.remove('on'))});
+  // 문장을 누르면 그 문장만, ▶ 전체 듣기는 질문·답변을 처음부터 끝까지 계속 반복
+  const ps=[...app.querySelectorAll('[data-c]')],btn=$('#all');let chain=0;
+  const read=i=>{app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'));const p=ps[i%ps.length];p.classList.add('on');chain&&p.scrollIntoView({block:'center',behavior:'smooth'});
+    const[qi,k]=p.dataset.c.split('-');play(qi,k)(()=>{p.classList.remove('on');if(chain)wait(k==='0'?800:350)(()=>read(i+1))})};
+  btn.onclick=()=>{chain=!chain;btn.textContent=chain?'⏹ 멈춤':'▶ 전체 듣기';halt();
+    if(chain){navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>wl=w).catch(()=>{});read(0)}else app.querySelectorAll('.on').forEach(x=>x.classList.remove('on'))};
+  ps.forEach((p,i)=>p.onclick=()=>{chain=0;btn.textContent='▶ 전체 듣기';halt();read(i)});
   $('#back').onclick=home;
 }
 console.assert(showN('I am ok.',1)==='I <span class="m">··</span> <span class="m">··.</span>'&&showN('a — b c',2).startsWith('a — b '),'showN: — 은 단어로 안 셈');
